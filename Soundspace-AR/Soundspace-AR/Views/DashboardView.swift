@@ -53,7 +53,8 @@ struct DashboardView: View {
             NavigationView {
                 ARSpeakerPlacementView(
                     roomType: .livingRoom,
-                    audioSystem: .system5_1
+                    audioSystem: .system5_1,
+                    savedLayout: nil
                 )
             }
         }

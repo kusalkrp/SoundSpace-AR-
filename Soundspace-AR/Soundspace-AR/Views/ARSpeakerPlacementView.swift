@@ -12,11 +12,12 @@ import CoreData
 struct ARSpeakerPlacementView: View {
     let roomType: RoomType
     let audioSystem: AudioSystemType
+    let savedLayout: SavedLayout?
     
     @StateObject private var viewModel = ARViewModel()
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.managedObjectContext) private var viewContext
-    @State private var showSpeakerInfo: Speaker?
+    @State private var showSpeakerInfo: Speaker.SpeakerPosition?
     @State private var showSaveDialog = false
     @State private var layoutName = ""
     @State private var isTrackingQualityGood = true
@@ -189,7 +190,8 @@ struct ARSpeakerPlacementView_Previews: PreviewProvider {
     static var previews: some View {
         ARSpeakerPlacementView(
             roomType: .livingRoom,
-            audioSystem: .system5_1
+            audioSystem: .system5_1,
+            savedLayout: nil
         )
     }
 }

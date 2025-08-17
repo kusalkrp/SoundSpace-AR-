@@ -23,7 +23,7 @@ struct SettingsView: View {
                     Toggle(isOn: $useBiometricAuth) {
                         Label(biometricType, systemImage: biometricType == "Face ID" ? "faceid" : "touchid")
                     }
-                    .onChange(of: useBiometricAuth) { newValue in
+                    .onChange(of: useBiometricAuth) { _, newValue in
                         if newValue {
                             authenticateUser()
                         }

@@ -20,6 +20,7 @@ struct MLRoomDetectionView: View {
     @State private var recommendedSystem: AudioSystemType?
     @State private var confidence: Float = 0.0
     @State private var detectedObjects: [String] = []
+    @State private var classificationSupported: Bool = true
     
     var body: some View {
         ZStack {
@@ -74,6 +75,12 @@ struct MLRoomDetectionView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.white.opacity(0.8))
                                 .multilineTextAlignment(.center)
+                            if !classificationSupported {
+                                Text("Live Vision classification not available on this iOS version or device. You can still continue and we'll provide a default recommendation.")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                                    .multilineTextAlignment(.center)
+                            }
                         }
                         .padding()
                         .background(Color.black.opacity(0.7))
@@ -87,6 +94,21 @@ struct MLRoomDetectionView: View {
                         .padding()
                         .background(Color.green)
                         .cornerRadius(12)
+
+                        if !classificationSupported {
+                            Button("Show Default Recommendation") {
+                                // Emit a default lightweight result when classification unsupported
+                                detectedRoomType = .livingRoom
+                                recommendedSystem = .system5_1
+                                confidence = 0.25
+                                showingResults = true
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.orange)
+                            .cornerRadius(10)
+                        }
                     }
                     .padding()
                 }
@@ -105,6 +127,16 @@ struct MLRoomDetectionView: View {
                         Text("Keep moving your camera around the room")
                             .font(.subheadline)
                             .foregroundColor(.white.opacity(0.8))
+
+                        Button("Finish Now") {
+                            roomDetector.forceEmitResultNow()
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.blue)
+                        .cornerRadius(10)
                     }
                     .padding()
                     .background(Color.black.opacity(0.7))
@@ -114,9 +146,17 @@ struct MLRoomDetectionView: View {
             }
         }
         .onAppear {
-            cameraManager.startSession()
+            cameraManager.startSession(delegate: roomDetector)
+            classificationSupported = roomDetector.supportsClassification
             roomDetector.onObjectsDetected = { objects in
                 self.detectedObjects = objects
+            }
+            roomDetector.onAnalysisResult = { result in
+                self.detectedRoomType = result.roomType
+                self.recommendedSystem = result.recommendedSystem
+                self.confidence = result.confidence
+                self.showingResults = true
+                self.isAnalyzing = false
             }
         }
         .onDisappear {
@@ -133,23 +173,11 @@ struct MLRoomDetectionView: View {
     
     private func startAnalysis() {
         isAnalyzing = true
-        roomDetector.startDetection(with: cameraManager.session)
-        
-        // Simulate analysis completion after 3 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            completeAnalysis()
-        }
+    roomDetector.startLiveAnalysis()
     }
     
     private func completeAnalysis() {
-        isAnalyzing = false
-        
-        // Mock results for now
-        detectedRoomType = .livingRoom
-        recommendedSystem = .system5_1
-        confidence = 0.85
-        
-        showingResults = true
+    // Deprecated: now handled by Vision callback
     }
 }
 
@@ -157,33 +185,42 @@ struct MLRoomDetectionView: View {
 
 class CameraManager: ObservableObject {
     let session = AVCaptureSession()
-    private var videoOutput = AVCaptureVideoDataOutput()
+    private let videoOutput = AVCaptureVideoDataOutput()
     
-    func startSession() {
-        guard let camera = AVCaptureDevice.default(for: .video) else { return }
-        
+    func startSession(delegate: AVCaptureVideoDataOutputSampleBufferDelegate) {
+        guard session.inputs.isEmpty else { return }
+        session.beginConfiguration()
+        session.sessionPreset = .high
+        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            session.commitConfiguration(); return
+        }
         do {
             let input = try AVCaptureDeviceInput(device: camera)
-            
-            if session.canAddInput(input) {
-                session.addInput(input)
+            if session.canAddInput(input) { session.addInput(input) }
+            videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
+            videoOutput.alwaysDiscardsLateVideoFrames = true
+            let queue = DispatchQueue(label: "camera.sample.buffer")
+            videoOutput.setSampleBufferDelegate(delegate, queue: queue)
+            if session.canAddOutput(videoOutput) { session.addOutput(videoOutput) }
+            if let connection = videoOutput.connection(with: .video) {
+                if #available(iOS 17.0, *) {
+                    // 90° rotation = portrait (device held upright)
+                    if connection.isVideoRotationAngleSupported(90) {
+                        connection.videoRotationAngle = 90
+                    }
+                } else if connection.isVideoOrientationSupported {
+                    connection.videoOrientation = .portrait
+                }
             }
-            
-            if session.canAddOutput(videoOutput) {
-                session.addOutput(videoOutput)
-            }
-            
-            DispatchQueue.global(qos: .userInitiated).async {
-                self.session.startRunning()
-            }
+            session.commitConfiguration()
+            DispatchQueue.global(qos: .userInitiated).async { self.session.startRunning() }
         } catch {
-            print("Error setting up camera: \(error)")
+            session.commitConfiguration()
+            print("Camera setup error: \(error)")
         }
     }
     
-    func stopSession() {
-        session.stopRunning()
-    }
+    func stopSession() { session.stopRunning() }
 }
 
 // MARK: - Camera Preview
@@ -215,14 +252,112 @@ struct CameraPreviewView: UIViewRepresentable {
 
 // MARK: - Room Detector
 
-class RoomDetector: NSObject, ObservableObject {
+class RoomDetector: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+    // Callbacks
     var onObjectsDetected: (([String]) -> Void)?
+    var onAnalysisResult: ((RoomAnalysisHeuristics.Result) -> Void)?
     
-    func startDetection(with session: AVCaptureSession) {
-        // Mock implementation - in a real app, this would use Core ML
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.onObjectsDetected?(["Sofa", "TV", "Coffee Table"])
+    // Vision
+    private let sequenceHandler = VNSequenceRequestHandler()
+    private var classificationRequests: [VNRequest] = []
+    // Removed object observation storage (VNRecognizeObjectsRequest unavailable in current SDK)
+    private var sceneLabelScores: [String: Float] = [:]
+    private var frameCounter = 0
+    private let inferenceInterval = 5 // analyze every Nth frame
+    private var isLive = false
+    private var lastResultTimestamp = Date(timeIntervalSince1970: 0)
+    private let resultCooldown: TimeInterval = 2.0
+    private var pseudoObjects: [String] = []
+    private let smoothingFactor: Float = 0.8 // exponential moving average smoothing
+    
+    // Basic area estimation (coarse) via motion extent accumulation
+    private var minX: Float =  .greatestFiniteMagnitude
+    private var maxX: Float = -.greatestFiniteMagnitude
+    private var minZ: Float =  .greatestFiniteMagnitude
+    private var maxZ: Float = -.greatestFiniteMagnitude
+    
+    override init() {
+        super.init()
+        prepareRequests()
+    }
+    
+    func startLiveAnalysis() { isLive = true }
+    func stop() { isLive = false }
+    
+    private func prepareRequests() {
+        // Scene classification (built-in). Object recognition request omitted because VNRecognizeObjectsRequest
+        // isn't available in this SDK / deployment target.
+        if #available(iOS 16.0, *) {
+            let sceneRequest = VNClassifyImageRequest()
+            classificationRequests = [sceneRequest]
+        } else {
+            classificationRequests = [] // Fallback: no Vision classification available
         }
+    }
+
+    var supportsClassification: Bool { !classificationRequests.isEmpty }
+    
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        guard isLive else { return }
+        frameCounter += 1
+        if frameCounter % inferenceInterval != 0 { return }
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        if !classificationRequests.isEmpty {
+            do {
+                try sequenceHandler.perform(classificationRequests, on: pixelBuffer)
+                processRequests()
+            } catch { print("Vision error: \(error)") }
+        }
+    }
+    
+    private func processRequests() {
+        // scene-only fallback: object labels not available in this configuration
+        var newSceneLabels: [(String, Float)] = []
+        for request in classificationRequests {
+            if let sceneReq = request as? VNClassifyImageRequest, let results = sceneReq.results { // VNClassificationObservation
+                for r in results.prefix(5) {
+                    let prev = sceneLabelScores[r.identifier] ?? Float(r.confidence)
+                    // Exponential moving average smoothing
+                    sceneLabelScores[r.identifier] = prev * smoothingFactor + Float(r.confidence) * (1 - smoothingFactor)
+                    newSceneLabels.append((r.identifier, Float(r.confidence)))
+                }
+            }
+        }
+        // Derive pseudo "objects" from top scene label tokens (very weak fallback) for heuristics.
+        let tokenObjects = newSceneLabels.flatMap { $0.0.split(separator: " ") }.map { String($0.lowercased()) }
+        if !tokenObjects.isEmpty {
+            pseudoObjects = Array(Set(tokenObjects.prefix(8)))
+            DispatchQueue.main.async { self.onObjectsDetected?(Array(self.pseudoObjects.prefix(5))) }
+        }
+        maybeEmitFinalResult()
+    }
+    
+    private func aggregateTopObjects(limit: Int) -> [String] { Array(pseudoObjects.prefix(limit)) }
+    private func topSceneLabels(limit: Int) -> [(String, Float)] {
+        return sceneLabelScores.sorted { $0.value > $1.value }.prefix(limit).map { ($0.key, $0.value) }
+    }
+    
+    private func maybeEmitFinalResult(force: Bool = false) {
+        let now = Date()
+        if !force {
+            guard now.timeIntervalSince(lastResultTimestamp) > resultCooldown else { return }
+        }
+        let objects = aggregateTopObjects(limit: 8)
+        let scenes = topSceneLabels(limit: 5)
+        let area = estimatedArea()
+        let result = RoomAnalysisHeuristics.combine(sceneLabels: scenes, objectLabels: objects, floorAreaM2: area)
+        lastResultTimestamp = now
+        DispatchQueue.main.async { self.onAnalysisResult?(result) }
+    }
+
+    func forceEmitResultNow() { maybeEmitFinalResult(force: true) }
+    
+    // Naive area estimate from accumulated camera translation extents (placeholder until AR fusion added)
+    private func estimatedArea() -> Float? {
+        let dx = maxX - minX
+        let dz = maxZ - minZ
+        guard dx.isFinite, dz.isFinite, dx > 0, dz > 0 else { return nil }
+        return dx * dz
     }
 }
 

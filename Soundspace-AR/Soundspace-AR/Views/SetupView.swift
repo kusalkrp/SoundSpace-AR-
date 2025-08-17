@@ -44,7 +44,8 @@ struct SetupView: View {
         .sheet(isPresented: $showingARView) {
             ARSpeakerPlacementView(
                 roomType: selectedRoomType,
-                audioSystem: selectedAudioSystem
+                audioSystem: selectedAudioSystem,
+                savedLayout: nil
             )
         }
         .sheet(isPresented: $showingMLDetection) {

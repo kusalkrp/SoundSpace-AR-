@@ -79,7 +79,7 @@ struct AddReviewView: View {
             }
         }
         .photosPicker(isPresented: $showingImagePicker, selection: $selectedPhotos, maxSelectionCount: 5, matching: .images)
-        .onChange(of: selectedPhotos) { newItems in
+        .onChange(of: selectedPhotos) { _, newItems in
             loadSelectedPhotos(newItems)
         }
     }

@@ -218,7 +218,7 @@ class AuthenticationManager: ObservableObject {
     
     func refreshAuthenticationStatus() async {
         // iOS 18.6 - Enhanced authentication status refresh
-        guard let context = viewContext else { return }
+        guard viewContext != nil else { return }
         
         // Refresh current user status
         await MainActor.run {
