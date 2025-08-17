@@ -61,6 +61,7 @@ struct ForgotPasswordView: View {
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
                             .foregroundColor(.white)
+                            .disableAutocorrection(true)
                     }
                     .padding()
                     .background(Color.white.opacity(0.1))

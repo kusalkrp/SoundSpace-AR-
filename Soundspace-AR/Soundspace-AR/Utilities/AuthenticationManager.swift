@@ -78,6 +78,8 @@ class AuthenticationManager: ObservableObject {
         newUser.setValue(email, forKey: "email")
         newUser.setValue(hashPassword(password), forKey: "password")
         newUser.setValue(true, forKey: "isLoggedIn")
+        newUser.setValue(Date(), forKey: "createdAt")
+        newUser.setValue(false, forKey: "biometricEnabled")
 
         do {
             try context.save()
@@ -212,5 +214,21 @@ class AuthenticationManager: ObservableObject {
         let context = LAContext()
         _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
         return context.biometryType
+    }
+    
+    func refreshAuthenticationStatus() async {
+        // iOS 18.6 - Enhanced authentication status refresh
+        guard let context = viewContext else { return }
+        
+        // Refresh current user status
+        await MainActor.run {
+            checkCurrentUser()
+        }
+        
+        // Optional: Check if biometric settings changed
+        if isAuthenticated && biometricType == .none {
+            // Biometrics were disabled - could prompt user
+            print("Biometric authentication is no longer available")
+        }
     }
 }

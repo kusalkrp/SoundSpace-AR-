@@ -14,6 +14,12 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showingAlert = false
     @State private var showingSignup = false
+    @State private var isLoggingIn = false
+    @FocusState private var focusedField: Field?
+
+    enum Field {
+        case email, password
+    }
 
     var body: some View {
         NavigationView {
@@ -25,88 +31,105 @@ struct LoginView: View {
                 )
                 .ignoresSafeArea()
 
-                VStack(spacing: 30) {
-                    VStack(spacing: 16) {
-                        Image(systemName: "waveform.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(.white)
-
-                        Text("SoundSpace AR")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-
-                        Text("Welcome Back")
-                            .font(.title2)
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-
-                    VStack(spacing: 20) {
-                        HStack {
-                            Image(systemName: "envelope")
-                                .foregroundColor(.white.opacity(0.7))
-                                .frame(width: 20)
-
-                            TextField("Email", text: $email)
-                                .textFieldStyle(PlainTextFieldStyle())
+                ScrollView {
+                    VStack(spacing: 30) {
+                        VStack(spacing: 16) {
+                            Image(systemName: "waveform.circle.fill")
+                                .font(.system(size: 80))
                                 .foregroundColor(.white)
-                        }
-                        .padding()
-                        .background(Color.white.opacity(0.2))
-                        .cornerRadius(12)
+                                .symbolEffect(.pulse)
 
-                        HStack {
-                            Image(systemName: "lock")
-                                .foregroundColor(.white.opacity(0.7))
-                                .frame(width: 20)
-
-                            SecureField("Password", text: $password)
-                                .textFieldStyle(PlainTextFieldStyle())
+                            Text("SoundSpace AR")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
                                 .foregroundColor(.white)
-                        }
-                        .padding()
-                        .background(Color.white.opacity(0.2))
-                        .cornerRadius(12)
-                    }
-                    .padding(.horizontal)
 
-                    VStack(spacing: 15) {
-                        Button("Sign In") {
-                            performLogin()
+                            Text("Welcome Back")
+                                .font(.title2)
+                                .foregroundColor(.white.opacity(0.8))
                         }
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(Color.black.opacity(0.2))
-                        .cornerRadius(12)
-                        .padding(.horizontal)
 
-                        if authManager.biometricType != .none {
-                            Button("Use Biometric") {
-                                authManager.authenticateWithBiometrics()
+                        VStack(spacing: 20) {
+                            HStack {
+                                Image(systemName: "envelope")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(width: 20)
+
+                                TextField("Email", text: $email)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .foregroundColor(.white)
+                                    .focused($focusedField, equals: .email)
+                                    .autocapitalization(.none)
+                                    .keyboardType(.emailAddress)
+                                    .disableAutocorrection(true)
+                                    .textContentType(.emailAddress)
                             }
-                            .font(.subheadline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity, minHeight: 45)
+                            .padding()
                             .background(Color.white.opacity(0.2))
                             .cornerRadius(12)
+
+                            HStack {
+                                Image(systemName: "lock")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(width: 20)
+
+                                SecureField("Password", text: $password)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .foregroundColor(.white)
+                                    .focused($focusedField, equals: .password)
+                                    .textContentType(.password)
+                            }
+                            .padding()
+                            .background(Color.white.opacity(0.2))
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+
+                        VStack(spacing: 15) {
+                            Button("Sign In") {
+                                performLogin()
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .background(Color.black.opacity(0.2))
+                            .cornerRadius(12)
                             .padding(.horizontal)
-                        }
-                    }
+                            .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
 
-                    HStack {
-                        Text("Don't have an account?")
-                            .foregroundColor(.white.opacity(0.8))
-                        Button("Sign Up") {
-                            showingSignup = true
+                            if authManager.biometricType != .none {
+                                Button(action: {
+                                    authManager.authenticateWithBiometrics()
+                                }) {
+                                    HStack {
+                                        Image(systemName: biometricIcon)
+                                        Text("Use \(biometricText)")
+                                    }
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity, minHeight: 45)
+                                .background(Color.white.opacity(0.2))
+                                .cornerRadius(12)
+                                .padding(.horizontal)
+                            }
                         }
-                        .foregroundColor(.white)
-                        .fontWeight(.semibold)
-                    }
 
-                    Spacer()
+                        HStack {
+                            Text("Don't have an account?")
+                                .foregroundColor(.white.opacity(0.8))
+                            Button("Sign Up") {
+                                showingSignup = true
+                            }
+                            .foregroundColor(.white)
+                            .fontWeight(.semibold)
+                        }
+
+                        Spacer(minLength: 100)
+                    }
+                    .padding()
                 }
-                .padding()
+                .scrollDismissesKeyboard(.interactively)
             }
         }
         .alert("Login Error", isPresented: $showingAlert) {
@@ -117,6 +140,44 @@ struct LoginView: View {
         .sheet(isPresented: $showingSignup) {
             SignupView(authManager: authManager)
         }
+        .onSubmit {
+            if focusedField == .email {
+                focusedField = .password
+            } else if focusedField == .password {
+                performLogin()
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                }
+            }
+        }
+    }
+    
+    // iOS 18.6 - Computed properties for biometric UI
+    private var biometricText: String {
+        switch authManager.biometricType {
+        case .faceID:
+            return "Face ID"
+        case .touchID:
+            return "Touch ID"
+        default:
+            return "Biometric"
+        }
+    }
+    
+    private var biometricIcon: String {
+        switch authManager.biometricType {
+        case .faceID:
+            return "faceid"
+        case .touchID:
+            return "touchid"
+        default:
+            return "person.fill.checkmark"
+        }
     }
 
     private func performLogin() {
@@ -125,11 +186,20 @@ struct LoginView: View {
             showingAlert = true
             return
         }
-
-        if authManager.login(email: email, password: password) {
-            // Login successful
-        } else {
-            showingAlert = true
+        
+        // iOS 18.6 - Enhanced login with loading state
+        isLoggingIn = true
+        focusedField = nil // Dismiss keyboard
+        
+        Task {
+            await MainActor.run {
+                if authManager.login(email: email, password: password) {
+                    // Login successful
+                } else {
+                    showingAlert = true
+                }
+                isLoggingIn = false
+            }
         }
     }
 }

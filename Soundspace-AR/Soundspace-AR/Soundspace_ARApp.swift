@@ -12,16 +12,27 @@ import CoreData
 @main
 struct Soundspace_ARApp: App {
     let persistenceController = PersistenceController.shared
-    @StateObject private var authManager = AuthenticationManager()
+    @StateObject private var authManager = AuthenticationManager(viewContext: PersistenceController.shared.container.viewContext)
+    @StateObject private var speakerDB = SpeakerDatabaseManager(context: PersistenceController.shared.container.viewContext)
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(authManager)
-                .onAppear {
-                    authManager.setContext(persistenceController.container.viewContext)
-                }
+                .environmentObject(speakerDB)
         }
+        .backgroundTask(.appRefresh("com.soundspace.refresh")) {
+            // Background app refresh for iOS 18.6
+            await refreshSpeakerDatabase()
+        }
+    }
+    
+    @MainActor
+    private func refreshSpeakerDatabase() async {
+        // Refresh speaker database in background
+        let context = persistenceController.container.viewContext
+        let speakerDB = SpeakerDatabaseManager(context: context)
+        await speakerDB.refreshFeaturedSpeakers()
     }
 }
