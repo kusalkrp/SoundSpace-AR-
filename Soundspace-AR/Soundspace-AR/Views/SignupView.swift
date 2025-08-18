@@ -7,17 +7,18 @@
 import SwiftUI
 
 struct SignupView: View {
-    @ObservedObject var authManager: AuthenticationManager
+    @EnvironmentObject var authManager: AuthenticationManager
     @Environment(\.dismiss) private var dismiss
     
     @State private var username = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var rememberMe = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var isLoading = false
-    @State private var agreedToTerms = false
+    @State private var isSignUpMode = true
     @FocusState private var focusedField: Field?
     
     enum Field {
@@ -25,203 +26,106 @@ struct SignupView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Background gradient
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.black, Color.blue.opacity(0.3)]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .edgesIgnoringSafeArea(.all)
+        ZStack {
+            backgroundGradient
+            
+            VStack(spacing: 0) {
+                // Title section at top
+                VStack {
+                    Spacer()
+                    
+                    Text("SoundSpace AR")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                }
                 
-                ScrollView {
-                    VStack(spacing: 30) {
-                        // Header
-                        VStack(spacing: 20) {
-                            HStack {
-                                Button("Cancel") {
-                                    dismiss()
-                                }
-                                .foregroundColor(.blue)
-                                
-                                Spacer()
-                            }
-                            .padding(.horizontal)
-                            
-                            Image(systemName: "person.badge.plus")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 60, height: 60)
-                                .foregroundColor(.white)
-                            
-                            Text("Create Account")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            Text("Join SoundSpace AR today")
+                // White card at bottom
+                VStack(spacing: 24) {
+                    // Toggle between Login and Sign Up
+                    HStack(spacing: 0) {
+                        loginToggleButton
+                        signUpToggleButton
+                    }
+                    .padding(4)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(26)
+                    
+                    VStack(spacing: 16) {
+                        // Username field
+                        TextField("Username", text: $username)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .focused($focusedField, equals: .username)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .textContentType(.username)
+                        
+                        // Email field
+                        TextField("Email", text: $email)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .focused($focusedField, equals: .email)
+                            .autocapitalization(.none)
+                            .keyboardType(.emailAddress)
+                            .disableAutocorrection(true)
+                            .textContentType(.emailAddress)
+                        
+                        // Password field
+                        SecureField("Password", text: $password)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .focused($focusedField, equals: .password)
+                            .textContentType(.newPassword)
+                        
+                        // Confirm Password field
+                        SecureField("Confirm password", text: $confirmPassword)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .focused($focusedField, equals: .confirmPassword)
+                            .textContentType(.newPassword)
+                        
+                        // Remember me
+                        HStack {
+                            rememberMeButton
+                            Spacer()
+                        }
+                    }
+                    
+                    // Sign Up button
+                    mainSignUpButton
+                    
+                    // Add FaceID option
+                    if authManager.biometricType != .none {
+                        Button(action: {
+                            // Handle FaceID setup after signup
+                        }) {
+                            Text("Add FaceID")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
-                        
-                        // Signup Form
-                        VStack(spacing: 20) {
-                            // Username Field
-                            HStack {
-                                Image(systemName: "person")
-                                    .foregroundColor(.gray)
-                                    .frame(width: 20)
-                                
-                                TextField("Username", text: $username)
-                                    .textContentType(.username)
-                                    .autocapitalization(.none)
-                                    .foregroundColor(.white)
-                                    .focused($focusedField, equals: .username)
-                                    .disableAutocorrection(true)
-                            }
-                            .padding()
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(10)
-                            
-                            // Email Field
-                            HStack {
-                                Image(systemName: "envelope")
-                                    .foregroundColor(.gray)
-                                    .frame(width: 20)
-                                
-                                TextField("Email", text: $email)
-                                    .textContentType(.emailAddress)
-                                    .keyboardType(.emailAddress)
-                                    .autocapitalization(.none)
-                                    .foregroundColor(.white)
-                                    .focused($focusedField, equals: .email)
-                                    .disableAutocorrection(true)
-                            }
-                            .padding()
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(10)
-                            
-                            // Password Field
-                            HStack {
-                                Image(systemName: "lock")
-                                    .foregroundColor(.gray)
-                                    .frame(width: 20)
-                                
-                                SecureField("Password", text: $password)
-                                    .textContentType(.newPassword)
-                                    .foregroundColor(.white)
-                                    .focused($focusedField, equals: .password)
-                            }
-                            .padding()
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(10)
-                            
-                            // Confirm Password Field
-                            HStack {
-                                Image(systemName: "lock.fill")
-                                    .foregroundColor(.gray)
-                                    .frame(width: 20)
-                                
-                                SecureField("Confirm Password", text: $confirmPassword)
-                                    .textContentType(.newPassword)
-                                    .foregroundColor(.white)
-                                    .focused($focusedField, equals: .confirmPassword)
-                            }
-                            .padding()
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(10)
-                            
-                            // Password Requirements
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("Password Requirements:")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                
-                                HStack {
-                                    Image(systemName: password.count >= 6 ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(password.count >= 6 ? .green : .gray)
-                                    Text("At least 6 characters")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                    Spacer()
-                                }
-                                
-                                HStack {
-                                    Image(systemName: password == confirmPassword && !confirmPassword.isEmpty ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(password == confirmPassword && !confirmPassword.isEmpty ? .green : .gray)
-                                    Text("Passwords match")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                    Spacer()
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            // Terms and Conditions
-                            HStack {
-                                Button(action: {
-                                    agreedToTerms.toggle()
-                                }) {
-                                    Image(systemName: agreedToTerms ? "checkmark.square.fill" : "square")
-                                        .foregroundColor(agreedToTerms ? .blue : .gray)
-                                }
-                                
-                                Text("I agree to the Terms of Service and Privacy Policy")
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                                
-                                Spacer()
-                            }
+                    }
+                    
+                    // Sign in link
+                    HStack {
+                        Text("Already have an account?")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        Button("Sign in") {
+                            dismiss()
                         }
-                        .padding(.horizontal, 40)
-                        
-                        // Sign Up Button
-                        Button(action: signUp) {
-                            HStack {
-                                if isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                        .scaleEffect(0.8)
-                                }
-                                
-                                Text("Create Account")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(isValidForm ? Color.blue : Color.gray)
-                            .cornerRadius(10)
-                        }
-                        .disabled(!isValidForm || isLoading)
-                        .padding(.horizontal, 40)
-                        
-                        // Already have account link
-                        HStack {
-                            Text("Already have an account?")
-                                .foregroundColor(.gray)
-                            
-                            Button("Sign In") {
-                                dismiss()
-                            }
-                            .foregroundColor(.blue)
-                            .fontWeight(.semibold)
-                        }
-                        .padding(.top, 10)
-                        
-                        Spacer(minLength: 100)
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
                     }
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .padding(.vertical, 32)
+                .padding(.horizontal, 24)
+                .background(Color.white)
+                .cornerRadius(24)
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                .padding(.horizontal, 20)
             }
         }
-        .alert("Sign Up", isPresented: $showingAlert) {
-            Button("OK") {
-                if alertMessage.contains("successfully") {
-                    dismiss()
-                }
-            }
+        .alert("Signup Error", isPresented: $showingAlert) {
+            Button("OK") { }
         } message: {
             Text(alertMessage)
         }
@@ -234,48 +138,146 @@ struct SignupView: View {
             case .password:
                 focusedField = .confirmPassword
             case .confirmPassword:
-                if isValidForm {
-                    signUp()
-                }
+                performSignup()
             case .none:
                 break
             }
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    focusedField = nil
-                }
+    }
+    
+    // Computed properties to break up complex expressions
+    private var backgroundGradient: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 0.4, green: 0.5, blue: 1.0),
+                Color(red: 0.3, green: 0.4, blue: 0.9)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
+    private var loginToggleButton: some View {
+        Button(action: {
+            dismiss()
+        }) {
+            Text("Login")
+                .font(.headline)
+                .fontWeight(.medium)
+                .foregroundColor(!isSignUpMode ? .white : .gray)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+        }
+    }
+    
+    private var signUpToggleButton: some View {
+        Button(action: {
+            isSignUpMode = true
+        }) {
+            Text("Sign Up")
+                .font(.headline)
+                .fontWeight(.medium)
+                .foregroundColor(isSignUpMode ? .white : .gray)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(signUpButtonBackground)
+                .cornerRadius(22)
+        }
+    }
+    
+    @ViewBuilder
+    private var signUpButtonBackground: some View {
+        if isSignUpMode {
+            blueGradient
+        } else {
+            Color.clear
+        }
+    }
+    
+    private var blueGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 0.4, green: 0.5, blue: 1.0),
+                Color(red: 0.3, green: 0.4, blue: 0.9)
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+    
+    private var rememberMeButton: some View {
+        Button(action: {
+            rememberMe.toggle()
+        }) {
+            HStack {
+                Image(systemName: rememberMe ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(rememberMe ? .blue : .gray)
+                Text("Remember me")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
             }
         }
     }
     
-    private var isValidForm: Bool {
-        !username.isEmpty &&
-        !email.isEmpty &&
-        password.count >= 6 &&
-        password == confirmPassword &&
-        agreedToTerms
+    private var mainSignUpButton: some View {
+        Button(action: {
+            performSignup()
+        }) {
+            Text("Sign Up")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(blueGradient)
+                .cornerRadius(25)
+        }
+        .disabled(isLoading || !isFormValid)
     }
     
-    private func signUp() {
-        isLoading = true
-        
-        let success = authManager.signup(username: username, email: email, password: password)
-        
-        isLoading = false
-        if success {
-            alertMessage = "Account created successfully!"
-        } else {
-            alertMessage = authManager.authenticationError ?? "Failed to create account"
+    private var isFormValid: Bool {
+        !username.isEmpty &&
+        !email.isEmpty &&
+        !password.isEmpty &&
+        !confirmPassword.isEmpty &&
+        password == confirmPassword &&
+        password.count >= 6
+    }
+    
+    private func performSignup() {
+        guard isFormValid else {
+            if password != confirmPassword {
+                alertMessage = "Passwords don't match"
+            } else if password.count < 6 {
+                alertMessage = "Password must be at least 6 characters"
+            } else {
+                alertMessage = "Please fill in all fields"
+            }
+            showingAlert = true
+            return
         }
-        showingAlert = true
+        
+        isLoading = true
+        focusedField = nil
+        
+        Task {
+            await MainActor.run {
+                if authManager.signup(username: username, email: email, password: password) {
+                    dismiss()
+                } else {
+                    alertMessage = authManager.authenticationError ?? "Signup failed"
+                    showingAlert = true
+                }
+                isLoading = false
+            }
+        }
     }
 }
 
 struct SignupView_Previews: PreviewProvider {
     static var previews: some View {
-        SignupView(authManager: AuthenticationManager())
+        SignupView()
+            .environmentObject(AuthenticationManager())
     }
 }

@@ -21,7 +21,11 @@ struct ContentView: View {
             } else if authManager.isAuthenticated {
                 MainTabView()
             } else {
-                LoginView()
+                NavigationStack {
+                    LoginView()
+                        .navigationTitle("")
+                        .navigationBarTitleDisplayMode(.inline)
+                }
             }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in

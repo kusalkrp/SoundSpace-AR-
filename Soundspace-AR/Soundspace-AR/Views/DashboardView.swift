@@ -16,34 +16,23 @@ struct DashboardView: View {
     @State private var showingMLRoomDetection = false
     @State private var savedLayoutsCount = 0
     @State private var username = "User"
+    @State private var showingProfile = false
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Welcome Header
-                    headerSection
-                    
-                    // Quick Action Cards
-                    quickActionsSection
-                    
-                    // Stats Section
-                    statsSection
-                    
-                    // Recent Activity
-                    recentActivitySection
-                    
-                    // Featured Speakers
-                    featuredSpeakersSection
-                    
-                    Spacer(minLength: 100)
+        ZStack {
+            backgroundGradient
+            
+            VStack(spacing: 0) {
+                headerSection
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        dashboardPanel
+                        Spacer(minLength: 120) // Space for tab bar
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 24)
                 }
-                .padding()
-            }
-            .navigationTitle("SoundSpace AR")
-            .navigationBarTitleDisplayMode(.large)
-            .refreshable {
-                await refreshData()
             }
         }
         .onAppear {
@@ -51,11 +40,7 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showingARSetup) {
             NavigationView {
-                ARSpeakerPlacementView(
-                    roomType: .livingRoom,
-                    audioSystem: .system5_1,
-                    savedLayout: nil
-                )
+                SetupView()
             }
         }
         .sheet(isPresented: $showingMLRoomDetection) {
@@ -63,6 +48,24 @@ struct DashboardView: View {
                 MLRoomDetectionView()
             }
         }
+        .sheet(isPresented: $showingProfile) {
+            SettingsView()
+        }
+    }
+    
+    // Large outer white panel containing all dashboard content
+    private var dashboardPanel: some View {
+        VStack(spacing: 20) {
+            mainARSetupCard
+            HStack(spacing: 16) {
+                roomDetectionCard
+                savedLayoutsCard
+            }
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(32)
+        .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
     }
     
     @MainActor
@@ -71,201 +74,250 @@ struct DashboardView: View {
         loadUserData()
     }
     
+    // MARK: - Components
+    private var backgroundGradient: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 0.4, green: 0.5, blue: 1.0),
+                Color(red: 0.3, green: 0.4, blue: 0.9)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text("Welcome back,")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                    Text(username)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                }
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Dashboard")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
                 
-                Spacer()
-                
-                // Profile/Notification button
-                Button(action: {}) {
-                    Image(systemName: "bell")
-                        .font(.title2)
-                        .foregroundColor(.primary)
-                }
-            }
-            
-            Text("Ready to optimize your audio setup?")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal)
-    }
-    
-    private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Quick Actions")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
-                // Start AR Setup
-                ActionCard(
-                    title: "Start AR Setup",
-                    subtitle: "Place speakers in your room",
-                    icon: "viewfinder",
-                    color: .blue
-                ) {
-                    showingARSetup = true
-                }
-                
-                // ML Room Detection
-                ActionCard(
-                    title: "Smart Room Scan",
-                    subtitle: "AI-powered room analysis",
-                    icon: "camera.viewfinder",
-                    color: .green
-                ) {
-                    showingMLRoomDetection = true
-                }
-                
-                // Browse Speakers
-                NavigationLink(destination: SpeakerCommunityView()) {
-                    ActionCardContent(
-                        title: "Browse Speakers",
-                        subtitle: "Discover & review speakers",
-                        icon: "speaker.3",
-                        color: .orange
-                    )
-                }
-                
-                // Saved Layouts
-                NavigationLink(destination: SavedLayoutsView()) {
-                    ActionCardContent(
-                        title: "My Layouts",
-                        subtitle: "\(savedLayoutsCount) saved setups",
-                        icon: "square.grid.3x3",
-                        color: .purple
-                    )
-                }
-            }
-            .padding(.horizontal)
-        }
-    }
-    
-    private var statsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Your Stats")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            HStack(spacing: 16) {
-                StatCard(
-                    title: "Layouts",
-                    value: "\(savedLayoutsCount)",
-                    icon: "square.stack.3d.up.fill",
-                    color: .blue
-                )
-                
-                StatCard(
-                    title: "Reviews",
-                    value: "\(speakerDB.recentReviews.count)",
-                    icon: "star.fill",
-                    color: .yellow
-                )
-                
-                StatCard(
-                    title: "Wishlist",
-                    value: "5", // This would be calculated from actual wishlist
-                    icon: "heart.fill",
-                    color: .red
-                )
-            }
-            .padding(.horizontal)
-        }
-    }
-    
-    private var recentActivitySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Recent Activity")
-                    .font(.headline)
-                
-                Spacer()
-                
-                NavigationLink("See All", destination: SavedLayoutsView())
+                Text("Manage all things")
                     .font(.subheadline)
-                    .foregroundColor(.blue)
+                    .foregroundColor(.white.opacity(0.8))
             }
-            .padding(.horizontal)
             
-            if speakerDB.recentReviews.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "clock")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
-                    Text("No recent activity")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(Array(speakerDB.recentReviews.prefix(3)), id: \.id) { review in
-                        ActivityRow(review: review)
+            Spacer()
+            
+            Button(action: {
+                showingProfile = true
+            }) {
+                Image(systemName: "person.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+    }
+    
+    private var mainARSetupCard: some View {
+        Button(action: {
+            showingARSetup = true
+        }) {
+            VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Start ")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundColor(.black)
+                        + Text("AR")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundColor(.blue)
+                        
+                        Spacer()
+                    }
+                    
+                    HStack {
+                        Text("Setup")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundColor(.black)
+                        Spacer()
                     }
                 }
-                .padding(.horizontal)
+                
+                // AR Setup Illustration
+                arSetupIllustration
+            }
+            .padding(.vertical, 24)
+            .padding(.horizontal, 20)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var arSetupIllustration: some View {
+        VStack(spacing: 16) {
+            // Platform/Base first
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 180, height: 8)
+            
+            // Speaker setup illustration
+            HStack(spacing: 30) {
+                // Left speaker
+                VStack {
+                    Circle()
+                        .fill(Color.cyan.opacity(0.3))
+                        .frame(width: 35, height: 35)
+                        .overlay(
+                            Circle()
+                                .fill(Color.cyan.opacity(0.6))
+                                .frame(width: 25, height: 25)
+                                .overlay(
+                                    Circle()
+                                        .fill(Color.cyan)
+                                        .frame(width: 15, height: 15)
+                                )
+                        )
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.4))
+                        .frame(width: 3, height: 15)
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.6))
+                        .frame(width: 12, height: 4)
+                }
+                
+                // Center (TV/Screen and stand)
+                VStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.gray.opacity(0.7))
+                        .frame(width: 50, height: 30)
+                        .overlay(
+                            Text("TV")
+                                .font(.system(size: 8, weight: .medium))
+                                .foregroundColor(.white)
+                        )
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.5))
+                        .frame(width: 6, height: 12)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.gray.opacity(0.8))
+                        .frame(width: 35, height: 6)
+                }
+                
+                // Right speaker
+                VStack {
+                    Circle()
+                        .fill(Color.cyan.opacity(0.3))
+                        .frame(width: 35, height: 35)
+                        .overlay(
+                            Circle()
+                                .fill(Color.cyan.opacity(0.6))
+                                .frame(width: 25, height: 25)
+                                .overlay(
+                                    Circle()
+                                        .fill(Color.cyan)
+                                        .frame(width: 15, height: 15)
+                                )
+                        )
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.4))
+                        .frame(width: 3, height: 15)
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.6))
+                        .frame(width: 12, height: 4)
+                }
             }
         }
     }
     
-    private var featuredSpeakersSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Featured Speakers")
-                    .font(.headline)
-                
-                Spacer()
-                
-                NavigationLink("Browse All", destination: SpeakerCommunityView())
-                    .font(.subheadline)
-                    .foregroundColor(.blue)
+    private var bottomCardsContainer: some View {
+        // White container that holds both cards - no individual card backgrounds
+        VStack(spacing: 0) {
+            HStack(spacing: 20) {
+                roomDetectionCard
+                savedLayoutsCard
             }
-            .padding(.horizontal)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
-                    ForEach(Array(speakerDB.featuredSpeakers.prefix(5)), id: \.id) { speaker in
-                        NavigationLink(destination: SpeakerDetailView(speaker: speaker)) {
-                            FeaturedSpeakerCard(speaker: speaker)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                }
-                .padding(.horizontal)
-            }
+            .padding(.all, 24)
         }
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+    }
+    
+    private var roomDetectionCard: some View {
+        Button(action: {
+            showingMLRoomDetection = true
+        }) {
+            VStack(spacing: 8) {
+                Image(systemName: "viewfinder.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(.blue)
+                
+                VStack(spacing: 2) {
+                    Text("Room")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                    
+                    Text("Detection")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var savedLayoutsCard: some View {
+        Button(action: {
+            // Navigate to Saved Layouts
+        }) {
+            VStack(spacing: 8) {
+                Image(systemName: "square.stack.3d.up.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(.blue)
+                
+                VStack(spacing: 2) {
+                    Text("Saved")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                    
+                    Text("Layouts")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
     
     private func loadUserData() {
-        if let user = authManager.currentUser,
-           let name = user.value(forKey: "username") as? String {
+        // Safely handle Core Data operations
+        guard let user = authManager.currentUser else {
+            username = "User"
+            savedLayoutsCount = 0
+            return
+        }
+        
+        if let name = user.value(forKey: "username") as? String {
             username = name
         }
         
-        // Load saved layouts count
+        // Load saved layouts count with error handling
         let request: NSFetchRequest<SavedLayout> = SavedLayout.fetchRequest()
-        if let user = authManager.currentUser {
-            request.predicate = NSPredicate(format: "user == %@", user)
-        }
+        request.predicate = NSPredicate(format: "user == %@", user)
         
         do {
             savedLayoutsCount = try viewContext.count(for: request)
         } catch {
             print("Error loading saved layouts count: \(error)")
+            savedLayoutsCount = 0
         }
     }
 }
@@ -418,15 +470,9 @@ struct FeaturedSpeakerCard: View {
     }
 }
 
-struct DashboardView_Previews: PreviewProvider {
-    static var previews: some View {
-        let authManager = AuthenticationManager()
-        let context = PersistenceController.preview.container.viewContext
-        let speakerDB = SpeakerDatabaseManager(context: context)
-        
-        return DashboardView()
-            .environment(\.managedObjectContext, context)
-            .environmentObject(authManager)
-            .environmentObject(speakerDB)
-    }
+#Preview {
+    DashboardView()
+        .environmentObject(AuthenticationManager())
+        .environmentObject(SpeakerDatabaseManager(context: PersistenceController.preview.container.viewContext))
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

@@ -10,174 +10,336 @@ import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthenticationManager
+    // Login state
     @State private var email = ""
     @State private var password = ""
-    @State private var showingAlert = false
-    @State private var showingSignup = false
+    @State private var rememberMe = false
     @State private var isLoggingIn = false
+    // Shared
+    @State private var showingAlert = false
     @FocusState private var focusedField: Field?
+    // Pager control: 0 = Login, 1 = Sign Up
+    @State private var selectedAuthPage = 0
+    
+    // Inline Sign Up state
+    @State private var suUsername = ""
+    @State private var suEmail = ""
+    @State private var suPassword = ""
+    @State private var suConfirmPassword = ""
+    @State private var suRememberMe = false
+    @State private var isSigningUp = false
 
     enum Field {
         case email, password
+        case suUsername, suEmail, suPassword, suConfirm
     }
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                LinearGradient(
-                    colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.6)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-
-                ScrollView {
-                    VStack(spacing: 30) {
-                        VStack(spacing: 16) {
-                            Image(systemName: "waveform.circle.fill")
-                                .font(.system(size: 80))
-                                .foregroundColor(.white)
-                                .symbolEffect(.pulse)
-
-                            Text("SoundSpace AR")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-
-                            Text("Welcome Back")
-                                .font(.title2)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-
-                        VStack(spacing: 20) {
-                            HStack {
-                                Image(systemName: "envelope")
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .frame(width: 20)
-
-                                TextField("Email", text: $email)
-                                    .textFieldStyle(PlainTextFieldStyle())
-                                    .foregroundColor(.white)
-                                    .focused($focusedField, equals: .email)
-                                    .autocapitalization(.none)
-                                    .keyboardType(.emailAddress)
-                                    .disableAutocorrection(true)
-                                    .textContentType(.emailAddress)
-                            }
-                            .padding()
-                            .background(Color.white.opacity(0.2))
-                            .cornerRadius(12)
-
-                            HStack {
-                                Image(systemName: "lock")
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .frame(width: 20)
-
-                                SecureField("Password", text: $password)
-                                    .textFieldStyle(PlainTextFieldStyle())
-                                    .foregroundColor(.white)
-                                    .focused($focusedField, equals: .password)
-                                    .textContentType(.password)
-                            }
-                            .padding()
-                            .background(Color.white.opacity(0.2))
-                            .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
-
-                        VStack(spacing: 15) {
-                            Button("Sign In") {
-                                performLogin()
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity, minHeight: 50)
-                            .background(Color.black.opacity(0.2))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                            .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
-
-                            if authManager.biometricType != .none {
-                                Button(action: {
-                                    authManager.authenticateWithBiometrics()
-                                }) {
-                                    HStack {
-                                        Image(systemName: biometricIcon)
-                                        Text("Use \(biometricText)")
-                                    }
-                                }
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, minHeight: 45)
-                                .background(Color.white.opacity(0.2))
-                                .cornerRadius(12)
-                                .padding(.horizontal)
-                            }
-                        }
-
-                        HStack {
-                            Text("Don't have an account?")
-                                .foregroundColor(.white.opacity(0.8))
-                            Button("Sign Up") {
-                                showingSignup = true
-                            }
-                            .foregroundColor(.white)
-                            .fontWeight(.semibold)
-                        }
-
-                        Spacer(minLength: 100)
-                    }
-                    .padding()
-                }
-                .scrollDismissesKeyboard(.interactively)
+        ZStack {
+            backgroundGradient
+            
+            VStack(spacing: 0) {
+                titleSection
+                authCard
             }
         }
-        .alert("Login Error", isPresented: $showingAlert) {
-            Button("OK") { }
+        .alert("Authentication", isPresented: $showingAlert) {
+            Button("OK") {}
         } message: {
             Text(authManager.authenticationError ?? "Unknown error")
         }
-        .sheet(isPresented: $showingSignup) {
-            SignupView(authManager: authManager)
-        }
-        .onSubmit {
-            if focusedField == .email {
-                focusedField = .password
-            } else if focusedField == .password {
-                performLogin()
-            }
-        }
+        .onSubmit(handleSubmit)
         .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
+            toolbarContent
+        }
+    }
+
+    // MARK: - Main Sections
+    private var backgroundGradient: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 0.4, green: 0.5, blue: 1.0),
+                Color(red: 0.3, green: 0.4, blue: 0.9)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
+    private var titleSection: some View {
+        VStack {
+            Spacer()
+            Text("SoundSpace AR")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            Spacer()
+        }
+    }
+    
+    private var authCard: some View {
+        VStack(spacing: 20) {
+            authToggleButtons
+            authTabView
+        }
+        .padding(.vertical, 32)
+        .padding(.horizontal, 24)
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+        .padding(.horizontal, 20)
+    }
+    
+    private var authToggleButtons: some View {
+        HStack(spacing: 0) {
+            loginToggleButton
+            signupToggleButton
+        }
+        .padding(4)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(26)
+    }
+    
+    private var loginToggleButton: some View {
+        Button(action: switchToLogin) {
+            Text("Login")
+                .font(.headline)
+                .fontWeight(.medium)
+                .foregroundColor(loginButtonTextColor)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(loginButtonBackground)
+                .cornerRadius(22)
+        }
+    }
+    
+    private var signupToggleButton: some View {
+        Button(action: switchToSignup) {
+            Text("Sign Up")
+                .font(.headline)
+                .fontWeight(.medium)
+                .foregroundColor(signupButtonTextColor)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(signupButtonBackground)
+                .cornerRadius(22)
+        }
+    }
+    
+    private var authTabView: some View {
+        TabView(selection: $selectedAuthPage) {
+            loginForm.tag(0)
+            signupForm.tag(1)
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(maxWidth: .infinity)
+        .frame(height: 340)
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
+            Button("Login", action: switchToLogin)
+            Button("Sign Up", action: switchToSignup)
+        }
+    }
+
+    // MARK: - Computed Properties
+    private var loginButtonTextColor: Color {
+        selectedAuthPage == 0 ? .white : .gray
+    }
+    
+    private var signupButtonTextColor: Color {
+        selectedAuthPage == 1 ? .white : .gray
+    }
+    
+    @ViewBuilder
+    private var loginButtonBackground: some View {
+        if selectedAuthPage == 0 {
+            blueGradient
+        } else {
+            Color.clear
+        }
+    }
+    
+    @ViewBuilder
+    private var signupButtonBackground: some View {
+        if selectedAuthPage == 1 {
+            blueGradient
+        } else {
+            Color.clear
+        }
+    }
+
+    // MARK: - Actions
+    private func switchToLogin() {
+        withAnimation(.easeInOut) { selectedAuthPage = 0 }
+    }
+    
+    private func switchToSignup() {
+        withAnimation(.easeInOut) { selectedAuthPage = 1 }
+    }
+    
+    private func handleSubmit() {
+        switch focusedField {
+        case .email: focusedField = .password
+        case .password: performLogin()
+        case .suUsername: focusedField = .suEmail
+        case .suEmail: focusedField = .suPassword
+        case .suPassword: focusedField = .suConfirm
+        case .suConfirm: performSignup()
+        case .none: break
+        }
+    }
+
+    // MARK: - Subviews
+    private var loginForm: some View {
+        VStack(spacing: 16) {
+            TextField("Email", text: $email)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .email)
+                .autocapitalization(.none)
+                .keyboardType(.emailAddress)
+                .disableAutocorrection(true)
+                .textContentType(.emailAddress)
+            
+            SecureField("Password", text: $password)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .password)
+                .textContentType(.password)
+            
+            HStack {
+                Button(action: { rememberMe.toggle() }) {
+                    HStack {
+                        Image(systemName: rememberMe ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(rememberMe ? .blue : .gray)
+                        Text("Remember me")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                }
                 Spacer()
-                Button("Done") {
-                    focusedField = nil
+            }
+            
+            Button(action: { performLogin() }) {
+                Text("Login")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(blueGradient)
+                    .cornerRadius(25)
+            }
+            .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
+
+            if authManager.biometricType != .none {
+                Button(action: { authManager.authenticateWithBiometrics() }) {
+                    Text("Use FaceID to login")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
                 }
             }
+            
+            // Inline link to switch to Sign Up
+            HStack {
+                Text("Don't have an account?")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                Button("Sign up") {
+                    withAnimation(.easeInOut) { selectedAuthPage = 1 }
+                }
+                .font(.subheadline)
+                .foregroundColor(.blue)
+            }
+            Spacer(minLength: 0)
         }
+        .padding(.top, 4)
     }
-    
-    // iOS 18.6 - Computed properties for biometric UI
-    private var biometricText: String {
-        switch authManager.biometricType {
-        case .faceID:
-            return "Face ID"
-        case .touchID:
-            return "Touch ID"
-        default:
-            return "Biometric"
+
+    private var signupForm: some View {
+        VStack(spacing: 16) {
+            TextField("Username", text: $suUsername)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .suUsername)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+                .textContentType(.username)
+            
+            TextField("Email", text: $suEmail)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .suEmail)
+                .autocapitalization(.none)
+                .keyboardType(.emailAddress)
+                .disableAutocorrection(true)
+                .textContentType(.emailAddress)
+            
+            SecureField("Password", text: $suPassword)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .suPassword)
+                .textContentType(.newPassword)
+            
+            SecureField("Confirm password", text: $suConfirmPassword)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .suConfirm)
+                .textContentType(.newPassword)
+            
+            HStack {
+                Button(action: { suRememberMe.toggle() }) {
+                    HStack {
+                        Image(systemName: suRememberMe ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(suRememberMe ? .blue : .gray)
+                        Text("Remember me")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                }
+                Spacer()
+            }
+            
+            Button(action: { performSignup() }) {
+                Text("Sign Up")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(blueGradient)
+                    .cornerRadius(25)
+            }
+            .disabled(isSigningUp || !isSignupValid)
+            
+            // Inline link to switch to Login
+            HStack {
+                Text("Already have an account?")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                Button("Sign in") {
+                    withAnimation(.easeInOut) { selectedAuthPage = 0 }
+                }
+                .font(.subheadline)
+                .foregroundColor(.blue)
+            }
+            Spacer(minLength: 0)
         }
+        .padding(.top, 4)
     }
-    
-    private var biometricIcon: String {
-        switch authManager.biometricType {
-        case .faceID:
-            return "faceid"
-        case .touchID:
-            return "touchid"
-        default:
-            return "person.fill.checkmark"
-        }
+
+    // MARK: - Helpers
+    private var blueGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 0.4, green: 0.5, blue: 1.0),
+                Color(red: 0.3, green: 0.4, blue: 0.9)
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private var isSignupValid: Bool {
+        !suUsername.isEmpty && !suEmail.isEmpty && !suPassword.isEmpty && !suConfirmPassword.isEmpty && suPassword == suConfirmPassword && suPassword.count >= 6
     }
 
     private func performLogin() {
@@ -186,15 +348,12 @@ struct LoginView: View {
             showingAlert = true
             return
         }
-        
-        // iOS 18.6 - Enhanced login with loading state
         isLoggingIn = true
-        focusedField = nil // Dismiss keyboard
-        
+        focusedField = nil
         Task {
             await MainActor.run {
                 if authManager.login(email: email, password: password) {
-                    // Login successful
+                    // success
                 } else {
                     showingAlert = true
                 }
@@ -202,4 +361,38 @@ struct LoginView: View {
             }
         }
     }
+
+    private func performSignup() {
+        guard isSignupValid else {
+            if suPassword != suConfirmPassword {
+                authManager.authenticationError = "Passwords don't match"
+            } else if suPassword.count < 6 {
+                authManager.authenticationError = "Password must be at least 6 characters"
+            } else {
+                authManager.authenticationError = "Please fill in all fields"
+            }
+            showingAlert = true
+            return
+        }
+        isSigningUp = true
+        focusedField = nil
+        Task {
+            await MainActor.run {
+                if authManager.signup(username: suUsername, email: suEmail, password: suPassword) {
+                    // After success, switch to login page and prefill email
+                    selectedAuthPage = 0
+                    email = suEmail
+                    password = ""
+                } else {
+                    showingAlert = true
+                }
+                isSigningUp = false
+            }
+        }
+    }
+}
+
+#Preview {
+    LoginView()
+        .environmentObject(AuthenticationManager())
 }

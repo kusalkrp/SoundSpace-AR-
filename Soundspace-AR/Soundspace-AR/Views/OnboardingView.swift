@@ -10,75 +10,91 @@ struct OnboardingView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     
     var body: some View {
-        TabView {
-            onboardingPage(
-                title: "Welcome to SoundSpace AR",
-                description: "Design your perfect audio environment in augmented reality",
-                imageName: "speaker.wave.3",
-                systemImage: true
+        ZStack {
+            // Blue gradient background
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.4, green: 0.5, blue: 1.0),
+                    Color(red: 0.3, green: 0.4, blue: 0.9)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
+            .ignoresSafeArea()
             
-            onboardingPage(
-                title: "Place Speakers Virtually",
-                description: "Position speakers in your room using AR technology",
-                imageName: "arkit",
-                systemImage: true
-            )
-            
-            onboardingPage(
-                title: "Save Your Layouts",
-                description: "Save and recall your favorite speaker arrangements",
-                imageName: "square.and.arrow.down",
-                systemImage: true
-            )
-            
-            VStack(spacing: 20) {
-                Text("Ready to Begin?")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Button(action: {
-                    hasSeenOnboarding = true
-                }) {
-                    Text("Get Started")
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .frame(width: 200, height: 50)
-                        .background(Color.blue)
-                        .cornerRadius(10)
+            VStack(spacing: 0) {
+                // Welcome title section - takes up most of the screen
+                VStack {
+                    Spacer()
+                    
+                    VStack(spacing: 8) {
+                        Text("Welcome to")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                        
+                        Text("SoundSpace AR")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
+                    
+                    Spacer()
                 }
+                
+                // Main content card - positioned at bottom
+                VStack(spacing: 24) {
+                    VStack(spacing: 12) {
+                        Text("Your Sound")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(.black)
+                        
+                        Text("Setup Companion")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(.black)
+                    }
+                    
+                    Text("Let's get started by configuring your room and sound system. This helps us optimize the AR speaker layout for your space and audio needs")
+                        .font(.body)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 20)
+                        .lineSpacing(4)
+                    
+                    Button(action: {
+                        hasSeenOnboarding = true
+                    }) {
+                        Text("Get Started")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(red: 0.4, green: 0.5, blue: 1.0),
+                                        Color(red: 0.3, green: 0.4, blue: 0.9)
+                                    ]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(28)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                }
+                .padding(.vertical, 32)
+                .padding(.horizontal, 24)
+                .background(Color.white)
+                .cornerRadius(24)
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                .padding(.horizontal, 20)
             }
-            .padding()
         }
-        .tabViewStyle(PageTabViewStyle())
-        .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
-    }
-    
-    private func onboardingPage(title: String, description: String, imageName: String, systemImage: Bool = false) -> some View {
-        VStack(spacing: 20) {
-            if systemImage {
-                Image(systemName: imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 150, height: 150)
-                    .foregroundColor(.blue)
-            } else {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 300, height: 300)
-            }
-            
-            Text(title)
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Text(description)
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-        .padding()
     }
 }
 
