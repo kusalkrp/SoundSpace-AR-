@@ -9,16 +9,25 @@ import LocalAuthentication
 
 struct SettingsView: View {
     @EnvironmentObject var authManager: AuthenticationManager
-    @State private var username: String = "Aryan Shirk"
-    @State private var email: String = "aryan.shirk2@gmail.com"
+    @Environment(\.dismiss) private var dismiss
     @State private var useBiometricAuth: Bool = true
     @State private var remindersEnabled: Bool = true
     @State private var useARAnchoring: Bool = true
     @State private var showingEditProfile: Bool = false
+    @State private var showingChangePassword: Bool = false
+    
+    // Computed properties to get user data from AuthenticationManager
+    private var username: String {
+        authManager.currentUser?.value(forKey: "username") as? String ?? "Unknown User"
+    }
+    
+    private var email: String {
+        authManager.currentUser?.value(forKey: "email") as? String ?? "No Email"
+    }
     
     var body: some View {
         ZStack {
-            // Blue gradient background
+            // Blue gradient background to match design
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color(red: 0.4, green: 0.5, blue: 1.0),
@@ -28,90 +37,84 @@ struct SettingsView: View {
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
-                // Header
                 headerSection
-                
-                // Content card
                 contentCard
             }
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showingChangePassword) {
+            ChangePasswordView()
+                .environmentObject(authManager)
+        }
     }
     
     private var headerSection: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 12) {
             Spacer()
-            
             Text("Profile Settings")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+                .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
-                .padding(.top, 60)
-            
+                .padding(.top, 52)
             Spacer()
         }
-        .frame(height: 200)
+        .frame(height: 180)
     }
     
     private var contentCard: some View {
         VStack(spacing: 0) {
-            Spacer()
-            
+            // Scrollable content
             ScrollView {
                 VStack(spacing: 24) {
-                    // Profile Section
                     profileSection
-                    
-                    // Account Information Section
                     accountInformationSection
-                    
-                    // Security Section
                     securitySection
-                    
-                    // Other Section
                     otherSection
                     
-                    Spacer(minLength: 20)
-                    
-                    // Back button
-                    backButton
+                    // Add padding at bottom for fixed button
+                    Spacer(minLength: 80)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 32)
+                .padding(.horizontal, 20)
+                .padding(.top, 28)
+                .padding(.bottom, 16)
             }
-            .background(Color.white)
-            .cornerRadius(32)
-            .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 80)
+            
+            // Fixed back button at bottom
+            VStack {
+                backButton
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
+            }
         }
+        .background(
+            RoundedRectangle(cornerRadius: 36, style: .continuous)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
+        )
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
     }
     
     private var profileSection: some View {
-        VStack(spacing: 16) {
-            // Profile picture
+        VStack(spacing: 12) {
+            // Profile picture with edit badge
             ZStack {
                 Circle()
                     .fill(Color.gray.opacity(0.2))
-                    .frame(width: 80, height: 80)
-                
-                // Placeholder profile image or actual image
+                    .frame(width: 88, height: 88)
                 Image(systemName: "person.fill")
-                    .font(.system(size: 40))
+                    .font(.system(size: 44))
                     .foregroundColor(.gray)
-                
-                // Blue checkmark badge
                 Circle()
                     .fill(Color.blue)
                     .frame(width: 24, height: 24)
                     .overlay(
-                        Image(systemName: "checkmark")
+                        Image(systemName: "pencil")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.white)
                     )
-                    .offset(x: 28, y: 28)
+                    .offset(x: 30, y: 30)
             }
         }
     }
@@ -119,162 +122,134 @@ struct SettingsView: View {
     private var accountInformationSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Account Information")
-                .font(.headline)
-                .fontWeight(.bold)
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.primary)
             
-            // Username field
-            settingsField(
-                label: "Username",
-                value: username,
-                isEditable: false
-            )
-            
-            // Email field
-            settingsField(
-                label: "Email",
-                value: email,
-                isEditable: false
-            )
+            infoTile(label: "Username", value: username)
+            infoTile(label: "Email", value: email)
         }
     }
     
     private var securitySection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Security")
-                .font(.headline)
-                .fontWeight(.bold)
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.primary)
             
-            // Change PIN
-            settingsRow(
-                title: "Change PIN",
-                hasChevron: true,
-                action: {
-                    // Handle change PIN
-                }
-            )
-            
-            // Change Password
-            settingsRow(
-                title: "Change Password",
-                hasChevron: true,
-                action: {
-                    // Handle change password
-                }
-            )
-            
-            // FaceID toggle
-            HStack {
-                Text("FaceID")
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
+            tileRow {
+                Text("Change PIN")
                 Spacer()
-                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .onTapGesture { /* change PIN */ }
+
+            tileRow {
+                Text("Change Password")
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .onTapGesture {
+                showingChangePassword = true
+            }
+
+            tileRow {
+                Text("FaceID")
+                Spacer()
                 Toggle("", isOn: $useBiometricAuth)
+                    .labelsHidden()
                     .toggleStyle(SwitchToggleStyle(tint: .blue))
             }
-            .padding(.vertical, 4)
         }
     }
     
     private var otherSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Other")
-                .font(.headline)
-                .fontWeight(.bold)
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.primary)
             
-            // Help / About
-            settingsRow(
-                title: "Help ? / About",
-                hasChevron: true,
-                action: {
-                    // Handle help/about
-                }
-            )
-            
-            // Reminders & Calibration Tips toggle
-            HStack {
+            tileRow {
+                (Text("Help ") + Text("?").foregroundColor(.red) + Text(" / About"))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .onTapGesture { /* help/about */ }
+
+            tileRow {
                 Text("Reminders & Calibration Tips")
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
                 Spacer()
-                
                 Toggle("", isOn: $remindersEnabled)
+                    .labelsHidden()
                     .toggleStyle(SwitchToggleStyle(tint: .blue))
             }
-            .padding(.vertical, 4)
-            
-            // Use AR Anchoring toggle
-            HStack {
+
+            tileRow {
                 Text("Use AR Anchoring")
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
                 Spacer()
-                
                 Toggle("", isOn: $useARAnchoring)
+                    .labelsHidden()
                     .toggleStyle(SwitchToggleStyle(tint: .blue))
             }
-            .padding(.vertical, 4)
-        }
-    }
-    
-    private func settingsField(label: String, value: String, isEditable: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
             
-            HStack {
-                Text(value)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
-                Spacer()
+            // Logout button
+            Button(action: {
+                authManager.logout()
+                dismiss()
+            }) {
+                HStack {
+                    Text("Logout")
+                        .foregroundColor(.red)
+                    Spacer()
+                    Image(systemName: "arrow.right.square")
+                        .foregroundColor(.red)
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .padding(.vertical, 14)
+                .padding(.horizontal, 16)
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
         }
     }
-    
-    private func settingsRow(title: String, hasChevron: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(title)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                if hasChevron {
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding(.vertical, 4)
+
+
+    private func infoTile(label: String, value: String) -> some View {
+        tileRow {
+            Text(label)
+                .foregroundColor(.secondary)
+            Spacer()
+            Text(value)
+                .foregroundColor(Color.gray)
         }
-        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func tileRow<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        HStack { content() }
+            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
     }
     
     private var backButton: some View {
         Button(action: {
-            // Handle back navigation
+            dismiss()
         }) {
             Text("Back")
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .cornerRadius(16)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(LinearGradient(colors: [Color.blue.opacity(0.95), Color.blue.opacity(0.8)], startPoint: .top, endPoint: .bottom))
+                )
         }
     }
 }

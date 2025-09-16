@@ -28,10 +28,10 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         dashboardPanel
-                        Spacer(minLength: 120) // Space for tab bar
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 24)
+                    .frame(maxHeight: .infinity, alignment: .top) // Fill vertical space
                 }
             }
         }
@@ -55,17 +55,20 @@ struct DashboardView: View {
     
     // Large outer white panel containing all dashboard content
     private var dashboardPanel: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 32) { // More space between cards
             mainARSetupCard
-            HStack(spacing: 16) {
+            HStack(spacing: 20) {
                 roomDetectionCard
                 savedLayoutsCard
             }
         }
-        .padding(20)
+        .padding(.top, 32) // More top padding
+        .padding(.horizontal, 24) // Wider horizontal padding
+        .padding(.bottom, 32) // More bottom padding
         .background(Color.white)
         .cornerRadius(32)
         .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
+        .frame(maxHeight: .infinity, alignment: .top) // Fill available height
     }
     
     @MainActor
@@ -118,14 +121,14 @@ struct DashboardView: View {
         Button(action: {
             showingARSetup = true
         }) {
-            VStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(spacing: 32) { // More space inside card
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Start ")
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.system(size: 40, weight: .bold)) // Larger font
                             .foregroundColor(.black)
                         + Text("AR")
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.system(size: 40, weight: .bold))
                             .foregroundColor(.blue)
                         
                         Spacer()
@@ -133,7 +136,7 @@ struct DashboardView: View {
                     
                     HStack {
                         Text("Setup")
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.system(size: 40, weight: .bold)) // Larger font
                             .foregroundColor(.black)
                         Spacer()
                     }
@@ -142,8 +145,8 @@ struct DashboardView: View {
                 // AR Setup Illustration
                 arSetupIllustration
             }
-            .padding(.vertical, 24)
-            .padding(.horizontal, 20)
+            .padding(.vertical, 32) // More vertical padding
+            .padding(.horizontal, 24) // More horizontal padding
             .background(Color.white)
             .cornerRadius(20)
             .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
@@ -245,23 +248,23 @@ struct DashboardView: View {
         Button(action: {
             showingMLRoomDetection = true
         }) {
-            VStack(spacing: 8) {
+            VStack(spacing: 12) { // More space inside card
                 Image(systemName: "viewfinder.circle.fill")
-                    .font(.system(size: 28))
+                    .font(.system(size: 32)) // Larger icon
                     .foregroundColor(.blue)
                 
-                VStack(spacing: 2) {
+                VStack(spacing: 4) {
                     Text("Room")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold)) // Larger font
                         .foregroundColor(.black)
                     
                     Text("Detection")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold)) // Larger font
                         .foregroundColor(.black)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
+            .padding(.vertical, 24) // More vertical padding
             .background(Color.white)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
@@ -273,23 +276,23 @@ struct DashboardView: View {
         Button(action: {
             // Navigate to Saved Layouts
         }) {
-            VStack(spacing: 8) {
+            VStack(spacing: 12) { // More space inside card
                 Image(systemName: "square.stack.3d.up.fill")
-                    .font(.system(size: 28))
+                    .font(.system(size: 32)) // Larger icon
                     .foregroundColor(.blue)
                 
-                VStack(spacing: 2) {
+                VStack(spacing: 4) {
                     Text("Saved")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold)) // Larger font
                         .foregroundColor(.black)
                     
                     Text("Layouts")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold)) // Larger font
                         .foregroundColor(.black)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
+            .padding(.vertical, 24) // More vertical padding
             .background(Color.white)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)

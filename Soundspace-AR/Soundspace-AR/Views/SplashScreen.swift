@@ -7,9 +7,6 @@
 import SwiftUI
 
 struct SplashScreen: View {
-    @State private var isActive = false
-    @EnvironmentObject var authManager: AuthenticationManager
-    
     var body: some View {
         ZStack {
             Color.black.edgesIgnoringSafeArea(.all)
@@ -31,17 +28,6 @@ struct SplashScreen: View {
                     .font(.headline)
                     .foregroundColor(.gray)
             }
-        }
-        .onAppear {
-            // Simulate splash screen delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                withAnimation {
-                    self.isActive = true
-                }
-            }
-        }
-        .fullScreenCover(isPresented: $isActive) {
-            MainTabView().environmentObject(authManager)
         }
     }
 }

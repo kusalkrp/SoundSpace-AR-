@@ -10,6 +10,7 @@ struct RoomDetectionResultsView: View {
     let roomType: RoomType?
     let recommendedSystem: AudioSystemType?
     let confidence: Float
+    let roomDimensions: RoomDimensions?
     
     @Environment(\.dismiss) private var dismiss
     @State private var showingARSetup = false
@@ -20,6 +21,11 @@ struct RoomDetectionResultsView: View {
                 VStack(spacing: 24) {
                     // Results Header
                     resultsHeader
+                    
+                    // Room Dimensions (if available from AR scanning)
+                    if let dimensions = roomDimensions {
+                        roomDimensionsCard(dimensions)
+                    }
                     
                     // Room Type Result
                     if let roomType = roomType {
@@ -76,6 +82,32 @@ struct RoomDetectionResultsView: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
+    }
+    
+    private func roomDimensionsCard(_ dimensions: RoomDimensions) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Precise Room Dimensions", systemImage: "ruler.fill")
+                .font(.headline)
+                .foregroundColor(.purple)
+            
+            HStack(spacing: 16) {
+                DimensionCard(label: "Length", value: dimensions.length, unit: "m")
+                DimensionCard(label: "Width", value: dimensions.width, unit: "m")
+                DimensionCard(label: "Height", value: dimensions.height, unit: "m")
+            }
+            
+            HStack(spacing: 16) {
+                DimensionCard(label: "Area", value: dimensions.area, unit: "m²")
+                DimensionCard(label: "Volume", value: dimensions.volume, unit: "m³")
+            }
+            
+            Text("Measured using AR technology for high accuracy")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
     
     private func roomTypeCard(_ roomType: RoomType) -> some View {
@@ -355,6 +387,32 @@ struct RoomDetectionResultsView: View {
     }
 }
 
+struct DimensionCard: View {
+    let label: String
+    let value: Float
+    let unit: String
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            Text(String(format: "%.1f", value))
+                .font(.title3)
+                .fontWeight(.bold)
+            
+            Text(unit)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color.white)
+        .cornerRadius(8)
+    }
+}
+
 struct TipRow: View {
     let icon: String
     let text: String
@@ -377,7 +435,8 @@ struct RoomDetectionResultsView_Previews: PreviewProvider {
         RoomDetectionResultsView(
             roomType: .livingRoom,
             recommendedSystem: .system5_1,
-            confidence: 0.85
+            confidence: 0.85,
+            roomDimensions: nil
         )
     }
 }

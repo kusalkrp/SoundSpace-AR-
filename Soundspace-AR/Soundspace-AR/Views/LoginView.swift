@@ -17,6 +17,9 @@ struct LoginView: View {
     @State private var isLoggingIn = false
     // Shared
     @State private var showingAlert = false
+    @State private var alertTitle = "Authentication"
+    @State private var alertMessage = ""
+    @State private var showingForgotPassword = false
     @FocusState private var focusedField: Field?
     // Pager control: 0 = Login, 1 = Sign Up
     @State private var selectedAuthPage = 0
@@ -28,6 +31,9 @@ struct LoginView: View {
     @State private var suConfirmPassword = ""
     @State private var suRememberMe = false
     @State private var isSigningUp = false
+    
+    // Validation states
+    @State private var showValidationHints = false
 
     enum Field {
         case email, password
@@ -43,10 +49,13 @@ struct LoginView: View {
                 authCard
             }
         }
-        .alert("Authentication", isPresented: $showingAlert) {
+        .alert(alertTitle, isPresented: $showingAlert) {
             Button("OK") {}
         } message: {
-            Text(authManager.authenticationError ?? "Unknown error")
+            Text(alertMessage)
+        }
+        .sheet(isPresented: $showingForgotPassword) {
+            ForgotPasswordView(authManager: authManager)
         }
         .onSubmit(handleSubmit)
         .toolbar {
@@ -134,7 +143,7 @@ struct LoginView: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(maxWidth: .infinity)
-        .frame(height: 340)
+        .frame(height: 450)
     }
     
     @ToolbarContentBuilder
@@ -197,7 +206,11 @@ struct LoginView: View {
     private var loginForm: some View {
         VStack(spacing: 16) {
             TextField("Email", text: $email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
                 .focused($focusedField, equals: .email)
                 .autocapitalization(.none)
                 .keyboardType(.emailAddress)
@@ -205,7 +218,11 @@ struct LoginView: View {
                 .textContentType(.emailAddress)
             
             SecureField("Password", text: $password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
                 .focused($focusedField, equals: .password)
                 .textContentType(.password)
             
@@ -222,24 +239,49 @@ struct LoginView: View {
                 Spacer()
             }
             
-            Button(action: { performLogin() }) {
+            // Forgot Password link
+            HStack {
+                Spacer()
+                Button("Forgot Password?") {
+                    showingForgotPassword = true
+                }
+                .font(.subheadline)
+                .foregroundColor(.blue)
+            }
+            
+            Button(action: handleLogin) {
                 Text("Login")
                     .font(.headline)
-                    .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(blueGradient)
-                    .cornerRadius(25)
+                    .background(Color.blue)
+                    .cornerRadius(12)
             }
             .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
-
-            if authManager.biometricType != .none {
-                Button(action: { authManager.authenticateWithBiometrics() }) {
-                    Text("Use FaceID to login")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+            // Face ID login button
+            if authManager.biometricType == .faceID {
+                Button(action: {
+                    performFaceIDLogin()
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "faceid")
+                            .font(.system(size: 20))
+                            .foregroundColor(.blue)
+                        Text("Login with Face ID")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.blue)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                    )
                 }
+                .padding(.top, 8)
             }
             
             // Inline link to switch to Sign Up
@@ -259,31 +301,102 @@ struct LoginView: View {
     }
 
     private var signupForm: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             TextField("Username", text: $suUsername)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
                 .focused($focusedField, equals: .suUsername)
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
                 .textContentType(.username)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(showValidationHints && suUsername.isEmpty ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
+                )
+            
+            // Always reserve space for validation hint to prevent layout shifts
+            Text(showValidationHints && suUsername.isEmpty ? "Username is required" : "")
+                .font(.caption)
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .opacity(showValidationHints && suUsername.isEmpty ? 1 : 0)
+                .frame(height: showValidationHints && suUsername.isEmpty ? nil : 16)
             
             TextField("Email", text: $suEmail)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
                 .focused($focusedField, equals: .suEmail)
                 .autocapitalization(.none)
                 .keyboardType(.emailAddress)
                 .disableAutocorrection(true)
                 .textContentType(.emailAddress)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(showValidationHints && (suEmail.isEmpty || !isValidEmail(suEmail)) ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
+                )
+            
+            // Always reserve space for validation hint to prevent layout shifts
+            Text(showValidationHints && suEmail.isEmpty ? "Email is required" : 
+                 (showValidationHints && !suEmail.isEmpty && !isValidEmail(suEmail) ? "Please enter a valid email address" : ""))
+                .font(.caption)
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .opacity(showValidationHints && (suEmail.isEmpty || (!suEmail.isEmpty && !isValidEmail(suEmail))) ? 1 : 0)
+                .frame(height: showValidationHints && (suEmail.isEmpty || (!suEmail.isEmpty && !isValidEmail(suEmail))) ? nil : 16)
             
             SecureField("Password", text: $suPassword)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
                 .focused($focusedField, equals: .suPassword)
                 .textContentType(.newPassword)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(showValidationHints && (suPassword.isEmpty || suPassword.count < 6) ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
+                )
+            
+            // Always reserve space for validation hint to prevent layout shifts
+            Text(showValidationHints && suPassword.isEmpty ? "Password is required" : 
+                 (showValidationHints && !suPassword.isEmpty && suPassword.count < 6 ? "Password must be at least 6 characters" : ""))
+                .font(.caption)
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .opacity(showValidationHints && (suPassword.isEmpty || (!suPassword.isEmpty && suPassword.count < 6)) ? 1 : 0)
+                .frame(height: showValidationHints && (suPassword.isEmpty || (!suPassword.isEmpty && suPassword.count < 6)) ? nil : 16)
             
             SecureField("Confirm password", text: $suConfirmPassword)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
                 .focused($focusedField, equals: .suConfirm)
                 .textContentType(.newPassword)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(showValidationHints && (suConfirmPassword.isEmpty || suPassword != suConfirmPassword) ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
+                )
+            
+            // Always reserve space for validation hint to prevent layout shifts
+            Text(showValidationHints && suConfirmPassword.isEmpty ? "Please confirm your password" : 
+                 (showValidationHints && !suConfirmPassword.isEmpty && suPassword != suConfirmPassword ? "Passwords don't match" : ""))
+                .font(.caption)
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .opacity(showValidationHints && (suConfirmPassword.isEmpty || (!suConfirmPassword.isEmpty && suPassword != suConfirmPassword)) ? 1 : 0)
+                .frame(height: showValidationHints && (suConfirmPassword.isEmpty || (!suConfirmPassword.isEmpty && suPassword != suConfirmPassword)) ? nil : 16)
             
             HStack {
                 Button(action: { suRememberMe.toggle() }) {
@@ -298,17 +411,20 @@ struct LoginView: View {
                 Spacer()
             }
             
-            Button(action: { performSignup() }) {
-                Text("Sign Up")
+            Button(action: { 
+                showValidationHints = true
+                performSignup() 
+            }) {
+                Text(isSigningUp ? "Creating Account..." : "Sign Up")
                     .font(.headline)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(blueGradient)
+                    .background(isSignupValid ? AnyView(blueGradient) : AnyView(Color.gray))
                     .cornerRadius(25)
             }
-            .disabled(isSigningUp || !isSignupValid)
+            .disabled(isSigningUp)
             
             // Inline link to switch to Login
             HStack {
@@ -339,12 +455,23 @@ struct LoginView: View {
     }
 
     private var isSignupValid: Bool {
-        !suUsername.isEmpty && !suEmail.isEmpty && !suPassword.isEmpty && !suConfirmPassword.isEmpty && suPassword == suConfirmPassword && suPassword.count >= 6
+        !suUsername.isEmpty && !suEmail.isEmpty && isValidEmail(suEmail) && !suPassword.isEmpty && !suConfirmPassword.isEmpty && suPassword == suConfirmPassword && suPassword.count >= 6
+    }
+    
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
+    }
+    
+    private func handleLogin() {
+        performLogin()
     }
 
     private func performLogin() {
         guard !email.isEmpty, !password.isEmpty else {
-            authManager.authenticationError = "Please fill in all fields"
+            alertTitle = "Login Error"
+            alertMessage = "Please fill in all fields"
             showingAlert = true
             return
         }
@@ -353,8 +480,15 @@ struct LoginView: View {
         Task {
             await MainActor.run {
                 if authManager.login(email: email, password: password) {
-                    // success
+                    // Store credentials for Face ID if biometric auth is available
+                    if authManager.biometricType != .none {
+                        UserDefaults.standard.set(email, forKey: "faceIDEmail")
+                        UserDefaults.standard.set(password, forKey: "faceIDPassword_\(email)")
+                        UserDefaults.standard.set(true, forKey: "faceIDEnabled_\(email)")
+                    }
                 } else {
+                    alertTitle = "Login Error"
+                    alertMessage = authManager.authenticationError ?? "Login failed"
                     showingAlert = true
                 }
                 isLoggingIn = false
@@ -363,30 +497,77 @@ struct LoginView: View {
     }
 
     private func performSignup() {
+        print("DEBUG: performSignup called")
+        print("DEBUG: isSignupValid = \(isSignupValid)")
+        print("DEBUG: suUsername = '\(suUsername)', suEmail = '\(suEmail)', suPassword.count = \(suPassword.count), suConfirmPassword.count = \(suConfirmPassword.count)")
+        
         guard isSignupValid else {
-            if suPassword != suConfirmPassword {
-                authManager.authenticationError = "Passwords don't match"
-            } else if suPassword.count < 6 {
-                authManager.authenticationError = "Password must be at least 6 characters"
-            } else {
-                authManager.authenticationError = "Please fill in all fields"
-            }
-            showingAlert = true
+            print("DEBUG: Form validation failed - showing hints")
+            showValidationHints = true
             return
         }
+        
+        print("DEBUG: Starting signup process")
+        showValidationHints = false // Hide hints on successful validation
         isSigningUp = true
         focusedField = nil
         Task {
             await MainActor.run {
+                print("DEBUG: Calling authManager.signup")
                 if authManager.signup(username: suUsername, email: suEmail, password: suPassword) {
+                    print("DEBUG: Signup successful")
+                    // Store credentials for Face ID if biometric auth is available
+                    if authManager.biometricType != .none {
+                        UserDefaults.standard.set(suEmail, forKey: "faceIDEmail")
+                        UserDefaults.standard.set(suPassword, forKey: "faceIDPassword_\(suEmail)")
+                        UserDefaults.standard.set(true, forKey: "faceIDEnabled_\(suEmail)")
+                    }
+                    // Show success message
+                    alertTitle = "Success!"
+                    alertMessage = "Account created successfully! You can now log in."
+                    showingAlert = true
+                    
                     // After success, switch to login page and prefill email
                     selectedAuthPage = 0
                     email = suEmail
                     password = ""
                 } else {
+                    print("DEBUG: Signup failed with error: \(authManager.authenticationError ?? "Unknown error")")
+                    alertTitle = "Signup Error"
+                    alertMessage = authManager.authenticationError ?? "Signup failed"
                     showingAlert = true
                 }
                 isSigningUp = false
+            }
+        }
+    }
+
+    private func performFaceIDLogin() {
+        isLoggingIn = true
+        
+        authManager.authenticateWithFaceID { success, error in
+            DispatchQueue.main.async {
+                self.isLoggingIn = false
+                
+                if success {
+                    // Check if we have stored Face ID credentials
+                    if let storedEmail = UserDefaults.standard.string(forKey: "faceIDEmail"),
+                       let storedPassword = UserDefaults.standard.string(forKey: "faceIDPassword_\(storedEmail)") {
+                        // Use stored credentials for automatic login
+                        self.email = storedEmail
+                        self.password = storedPassword
+                        self.performLogin()
+                    } else {
+                        // Face ID successful but no stored credentials - prompt user to login manually
+                        self.alertTitle = "Face ID"
+                        self.alertMessage = "Face ID successful! Please enter your password to complete login."
+                        self.showingAlert = true
+                    }
+                } else {
+                    self.alertTitle = "Face ID Error"
+                    self.alertMessage = error ?? "Face ID authentication failed."
+                    self.showingAlert = true
+                }
             }
         }
     }

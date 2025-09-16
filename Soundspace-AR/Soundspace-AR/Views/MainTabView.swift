@@ -14,12 +14,13 @@ struct MainTabView: View {
     @State private var selected: Tab = .home
     
     enum Tab: Int, CaseIterable, Identifiable {
-        case home, room, layouts, settings
+        case home, room, community, layouts, settings
         var id: Int { rawValue }
         var title: String {
             switch self {
             case .home: return "Home"
             case .room: return "Room"
+            case .community: return "Community"
             case .layouts: return "Layouts"
             case .settings: return "Settings"
             }
@@ -28,6 +29,7 @@ struct MainTabView: View {
             switch self {
             case .home: return "house"
             case .room: return "camera.viewfinder"
+            case .community: return "person.3"
             case .layouts: return "square.stack.3d.up"
             case .settings: return "gearshape"
             }
@@ -36,6 +38,7 @@ struct MainTabView: View {
             switch self {
             case .home: return "house.fill"
             case .room: return "camera.viewfinder"
+            case .community: return "person.3.fill"
             case .layouts: return "square.stack.3d.up.fill"
             case .settings: return "gearshape.fill"
             }
@@ -44,26 +47,38 @@ struct MainTabView: View {
     
     var body: some View {
         ZStack {
-            // Content under the custom tab bar
-            Group {
-                switch selected {
-                case .home:
-                    DashboardView()
-                case .room:
-                    NavigationView { MLRoomDetectionView() }
-                case .layouts:
-                    SavedLayoutsView()
-                case .settings:
-                    SettingsView()
+            // Blue background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.4, green: 0.5, blue: 1.0),
+                    Color(red: 0.3, green: 0.4, blue: 0.9)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Main content
+                Group {
+                    switch selected {
+                    case .home:
+                        DashboardView()
+                    case .room:
+                        NavigationView { MLRoomDetectionView() }
+                    case .community:
+                        NavigationView { SpeakerCommunityView() }
+                    case .layouts:
+                        SavedLayoutsView()
+                    case .settings:
+                        SettingsView()
+                    }
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
-            // Custom pill tab bar
-            VStack { 
-                Spacer()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Custom pill tab bar
                 customTabBar
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.bottom, 8)
             }
             .ignoresSafeArea(.keyboard)
         }
@@ -72,36 +87,27 @@ struct MainTabView: View {
     private var customTabBar: some View {
         HStack(spacing: 0) {
             ForEach(Tab.allCases) { tab in
-                Button(action: { 
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0)) { 
-                        selected = tab 
-                    } 
+                Button(action: {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0)) {
+                        selected = tab
+                    }
                 }) {
                     VStack(spacing: 4) {
                         ZStack {
-                            // Background circle with smooth animation
                             if selected == tab {
                                 Circle()
-                                    .fill(Color.blue.opacity(0.15))
+                                    .fill(Color.white)
                                     .frame(width: 40, height: 40)
-                                    .scaleEffect(selected == tab ? 1.0 : 0.8)
-                                    .animation(.spring(response: 0.4, dampingFraction: 0.6), value: selected)
+                                    .shadow(color: Color.blue.opacity(0.15), radius: 8, x: 0, y: 2)
                             }
-                            
-                            // Icon with improved animation
                             Image(systemName: selected == tab ? tab.activeIcon : tab.icon)
                                 .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(selected == tab ? .blue : .gray)
-                                .scaleEffect(selected == tab ? 1.1 : 1.0)
-                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selected)
+                                .foregroundColor(selected == tab ? Color.blue : Color.gray.opacity(0.7))
                         }
-                        
-                        // Text with improved typography
                         Text(tab.title)
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(selected == tab ? .blue : .secondary)
+                            .foregroundColor(selected == tab ? Color.blue : Color.white.opacity(0.8))
                             .opacity(selected == tab ? 1.0 : 0.8)
-                            .animation(.easeInOut(duration: 0.2), value: selected)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
@@ -112,22 +118,21 @@ struct MainTabView: View {
                 .buttonStyle(TabButtonStyle())
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(Color.white.opacity(0.15))
                 .overlay(
                     RoundedRectangle(cornerRadius: 32, style: .continuous)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.25), lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 8)
-                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
         )
-        .padding(.horizontal, 20)
-        .padding(.bottom, 20)
+        .padding(.horizontal, 16)
     }
-}
+    }
+
 
 // Custom button style for tab items
 struct TabButtonStyle: ButtonStyle {

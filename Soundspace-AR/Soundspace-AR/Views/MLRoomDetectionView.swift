@@ -21,8 +21,101 @@ struct MLRoomDetectionView: View {
     @State private var confidence: Float = 0.0
     @State private var detectedObjects: [String] = []
     @State private var classificationSupported: Bool = true
+    @State private var showingMethodSelection = true
+    @State private var selectedMethod: DetectionMethod = .aiAnalysis
+    
+    enum DetectionMethod {
+        case aiAnalysis
+        case arScanning
+    }
     
     var body: some View {
+        ZStack {
+            if showingMethodSelection {
+                methodSelectionView
+            } else if selectedMethod == .arScanning {
+                RoomScanningView()
+            } else {
+                aiAnalysisView
+            }
+        }
+        .onAppear {
+            classificationSupported = roomDetector.supportsClassification
+        }
+    }
+    
+    private var methodSelectionView: some View {
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.4, green: 0.5, blue: 1.0),
+                    Color(red: 0.3, green: 0.4, blue: 0.9)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 30) {
+                // Header
+                VStack(spacing: 16) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.system(size: 60))
+                        .foregroundColor(.white)
+                    
+                    Text("Room Analysis")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text("Choose your preferred method to analyze your room")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                }
+                
+                // Method options
+                VStack(spacing: 20) {
+                    // AI Analysis Option
+                    MethodCard(
+                        title: "AI Analysis",
+                        subtitle: "Quick analysis using camera and AI",
+                        description: "Fast room detection with AI-powered recommendations",
+                        icon: "brain.head.profile",
+                        features: ["Quick results", "AI-powered detection", "Scene analysis"],
+                        isSelected: selectedMethod == .aiAnalysis
+                    ) {
+                        selectedMethod = .aiAnalysis
+                        showingMethodSelection = false
+                    }
+                    
+                    // AR Scanning Option
+                    MethodCard(
+                        title: "AR Scanning",
+                        subtitle: "Precise 3D measurement with AR",
+                        description: "Accurate room dimensions using AR technology",
+                        icon: "ruler.fill",
+                        features: ["Precise measurements", "3D room mapping", "AR visualization"],
+                        isSelected: selectedMethod == .arScanning
+                    ) {
+                        selectedMethod = .arScanning
+                        showingMethodSelection = false
+                    }
+                }
+                
+                // Cancel button
+                Button("Cancel") {
+                    dismiss()
+                }
+                .foregroundColor(.white.opacity(0.8))
+                .padding(.top, 20)
+            }
+            .padding(.horizontal, 24)
+        }
+    }
+    
+    private var aiAnalysisView: some View {
         ZStack {
             // Camera Preview
             CameraPreviewView(session: cameraManager.session)
@@ -32,8 +125,8 @@ struct MLRoomDetectionView: View {
             VStack {
                 // Top controls
                 HStack {
-                    Button("Cancel") {
-                        dismiss()
+                    Button("Back") {
+                        showingMethodSelection = true
                     }
                     .foregroundColor(.white)
                     .padding()
@@ -147,7 +240,6 @@ struct MLRoomDetectionView: View {
         }
         .onAppear {
             cameraManager.startSession(delegate: roomDetector)
-            classificationSupported = roomDetector.supportsClassification
             roomDetector.onObjectsDetected = { objects in
                 self.detectedObjects = objects
             }
@@ -166,18 +258,99 @@ struct MLRoomDetectionView: View {
             RoomDetectionResultsView(
                 roomType: detectedRoomType ?? .livingRoom,
                 recommendedSystem: recommendedSystem ?? .system5_1,
-                confidence: confidence
+                confidence: confidence,
+                roomDimensions: nil
             )
         }
     }
     
     private func startAnalysis() {
         isAnalyzing = true
-    roomDetector.startLiveAnalysis()
+        roomDetector.startLiveAnalysis()
     }
     
     private func completeAnalysis() {
-    // Deprecated: now handled by Vision callback
+        // Deprecated: now handled by Vision callback
+    }
+}
+
+// MARK: - Method Selection Card
+struct MethodCard: View {
+    let title: String
+    let subtitle: String
+    let description: String
+    let icon: String
+    let features: [String]
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 16) {
+                // Header
+                HStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(isSelected ? Color.white : Color.white.opacity(0.2))
+                            .frame(width: 60, height: 60)
+                        
+                        Image(systemName: icon)
+                            .font(.system(size: 24))
+                            .foregroundColor(isSelected ? Color.blue : Color.white)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    
+                    Spacer()
+                    
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.green)
+                    }
+                }
+                
+                // Description
+                Text(description)
+                    .font(.body)
+                    .foregroundColor(.white.opacity(0.9))
+                    .multilineTextAlignment(.leading)
+                
+                // Features
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(features, id: \.self) { feature in
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12))
+                                .foregroundColor(.green)
+                            
+                            Text(feature)
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                    }
+                }
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isSelected ? Color.white.opacity(0.2) : Color.black.opacity(0.3))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(isSelected ? Color.white.opacity(0.5) : Color.white.opacity(0.2), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

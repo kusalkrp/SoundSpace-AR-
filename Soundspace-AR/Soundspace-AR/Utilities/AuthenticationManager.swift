@@ -52,7 +52,10 @@ class AuthenticationManager: ObservableObject {
     }
 
     func signup(username: String, email: String, password: String) -> Bool {
-        guard let context = viewContext else { return false }
+        guard let context = viewContext else { 
+            authenticationError = "Database not available"
+            return false 
+        }
 
         let request = NSFetchRequest<NSManagedObject>(entityName: "User")
         request.predicate = NSPredicate(format: "email == %@", email)
@@ -60,10 +63,12 @@ class AuthenticationManager: ObservableObject {
         do {
             let existingUsers = try context.fetch(request)
             if !existingUsers.isEmpty {
+                print("DEBUG: User already exists with email: \(email)")
                 authenticationError = "User already exists"
                 return false
             }
         } catch {
+            print("DEBUG: Error checking existing user: \(error)")
             authenticationError = "Error checking user"
             return false
         }
@@ -74,26 +79,34 @@ class AuthenticationManager: ObservableObject {
         }
 
         let newUser = NSManagedObject(entity: entity, insertInto: context)
+        let hashedPassword = hashPassword(password)
         newUser.setValue(username, forKey: "username")
         newUser.setValue(email, forKey: "email")
-        newUser.setValue(hashPassword(password), forKey: "password")
+        newUser.setValue(hashedPassword, forKey: "password")
         newUser.setValue(true, forKey: "isLoggedIn")
         newUser.setValue(Date(), forKey: "createdAt")
         newUser.setValue(false, forKey: "biometricEnabled")
+        
+        print("DEBUG: Creating user - username: \(username), email: \(email), hashedPassword: \(hashedPassword)")
 
         do {
             try context.save()
+            print("DEBUG: User saved successfully")
             currentUser = newUser
             isAuthenticated = true
             return true
         } catch {
+            print("DEBUG: Failed to save user: \(error)")
             authenticationError = "Failed to save user"
             return false
         }
     }
 
     func login(email: String, password: String) -> Bool {
-        guard let context = viewContext else { return false }
+        guard let context = viewContext else { 
+            authenticationError = "Database not available"
+            return false 
+        }
 
         let request = NSFetchRequest<NSManagedObject>(entityName: "User")
         request.predicate = NSPredicate(format: "email == %@", email)
@@ -101,23 +114,38 @@ class AuthenticationManager: ObservableObject {
 
         do {
             let users = try context.fetch(request)
-            guard let user = users.first,
-                  let storedPassword = user.value(forKey: "password") as? String else {
+            print("DEBUG: Found \(users.count) users with email: \(email)")
+            
+            guard let user = users.first else {
+                print("DEBUG: No user found with email: \(email)")
                 authenticationError = "Invalid credentials"
                 return false
             }
-
-            if storedPassword == hashPassword(password) {
+            
+            guard let storedPassword = user.value(forKey: "password") as? String else {
+                print("DEBUG: No password found for user")
+                authenticationError = "Invalid credentials"
+                return false
+            }
+            
+            let hashedInputPassword = hashPassword(password)
+            print("DEBUG: Stored password: \(storedPassword)")
+            print("DEBUG: Input password hash: \(hashedInputPassword)")
+            
+            if storedPassword == hashedInputPassword {
+                print("DEBUG: Password match successful")
                 user.setValue(true, forKey: "isLoggedIn")
                 try context.save()
                 currentUser = user
                 isAuthenticated = true
                 return true
             } else {
+                print("DEBUG: Password match failed")
                 authenticationError = "Invalid credentials"
                 return false
             }
         } catch {
+            print("DEBUG: Login failed with error: \(error)")
             authenticationError = "Login failed"
             return false
         }
@@ -156,6 +184,58 @@ class AuthenticationManager: ObservableObject {
             }
         } else {
             authenticationError = "Biometric authentication not available"
+        }
+    }
+
+    // Face ID Authentication
+    func authenticateWithFaceID(completion: @escaping (Bool, String?) -> Void) {
+        let context = LAContext()
+        var error: NSError?
+        let reason = "Authenticate with Face ID to access your account."
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authError in
+                DispatchQueue.main.async {
+                    if success {
+                        completion(true, nil)
+                    } else {
+                        completion(false, authError?.localizedDescription)
+                    }
+                }
+            }
+        } else {
+            completion(false, error?.localizedDescription ?? "Face ID not available.")
+        }
+    }
+
+    func changePassword(currentPassword: String, newPassword: String, completion: @escaping (Bool, String) -> Void) {
+        guard let context = viewContext, let user = currentUser else {
+            completion(false, "No user logged in")
+            return
+        }
+
+        guard let storedPassword = user.value(forKey: "password") as? String else {
+            completion(false, "Unable to verify current password")
+            return
+        }
+
+        let hashedCurrentPassword = hashPassword(currentPassword)
+        if storedPassword != hashedCurrentPassword {
+            completion(false, "Current password is incorrect")
+            return
+        }
+
+        if newPassword.count < 6 {
+            completion(false, "New password must be at least 6 characters")
+            return
+        }
+
+        user.setValue(hashPassword(newPassword), forKey: "password")
+
+        do {
+            try context.save()
+            completion(true, "Password changed successfully")
+        } catch {
+            completion(false, "Failed to update password")
         }
     }
 

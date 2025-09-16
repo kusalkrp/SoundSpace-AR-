@@ -17,7 +17,7 @@ struct Soundspace_ARApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(authManager)
                 .environmentObject(speakerDB)

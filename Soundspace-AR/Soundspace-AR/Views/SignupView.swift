@@ -19,6 +19,8 @@ struct SignupView: View {
     @State private var alertMessage = ""
     @State private var isLoading = false
     @State private var isSignUpMode = true
+    @State private var showingFaceIDSetup = false
+    @State private var signupSuccessful = false
     @FocusState private var focusedField: Field?
     
     enum Field {
@@ -93,15 +95,70 @@ struct SignupView: View {
                     // Sign Up button
                     mainSignUpButton
                     
-                    // Add FaceID option
-                    if authManager.biometricType != .none {
-                        Button(action: {
-                            // Handle FaceID setup after signup
-                        }) {
-                            Text("Add FaceID")
+                    // Face ID setup section - show after successful signup
+                    if signupSuccessful && authManager.biometricType == .faceID {
+                        VStack(spacing: 16) {
+                            Text("Enable Face ID")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.primary)
+                            
+                            Text("Use Face ID for quick and secure login")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                            
+                            Button(action: {
+                                setupFaceID()
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "faceid")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.white)
+                                    Text("Enable Face ID")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.blue.opacity(0.8),
+                                            Color.blue.opacity(0.6)
+                                        ]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(12)
+                            }
+                            .disabled(isLoading)
+                            
+                            Button(action: {
+                                // Skip Face ID setup and continue
+                                dismiss()
+                            }) {
+                                Text("Skip for now")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.blue)
+                            }
+                            .padding(.top, 8)
+                            .disabled(isLoading)
+                            
+                            if isLoading {
+                                ProgressView("Setting up Face ID...")
+                                    .padding(.top, 10)
+                            }
                         }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                        .background(Color.blue.opacity(0.05))
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 8)
                     }
                     
                     // Sign in link
@@ -264,12 +321,46 @@ struct SignupView: View {
         Task {
             await MainActor.run {
                 if authManager.signup(username: username, email: email, password: password) {
-                    dismiss()
+                    signupSuccessful = true
+                    // Don't dismiss immediately, show Face ID option first
                 } else {
                     alertMessage = authManager.authenticationError ?? "Signup failed"
                     showingAlert = true
                 }
                 isLoading = false
+            }
+        }
+    }
+    
+    private func setupFaceID() {
+        isLoading = true
+        
+        authManager.authenticateWithFaceID { success, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                if success {
+                    // Store that Face ID is enabled for this user
+                    UserDefaults.standard.set(true, forKey: "faceIDEnabled_\(self.email)")
+                    UserDefaults.standard.set(self.email, forKey: "faceIDEmail")
+                    UserDefaults.standard.set(self.password, forKey: "faceIDPassword_\(self.email)")
+                    
+                    self.alertMessage = "Face ID enabled successfully! You can now use Face ID to login."
+                    self.showingAlert = true
+                    
+                    // Dismiss after showing success message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        self.dismiss()
+                    }
+                } else {
+                    self.alertMessage = error ?? "Face ID setup failed. You can enable it later in settings."
+                    self.showingAlert = true
+                    
+                    // Still dismiss after error, but with a shorter delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self.dismiss()
+                    }
+                }
             }
         }
     }

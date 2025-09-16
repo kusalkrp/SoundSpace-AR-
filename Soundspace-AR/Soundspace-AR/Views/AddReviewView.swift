@@ -35,52 +35,112 @@ struct AddReviewView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Speaker Info Header
-                    speakerInfoHeader
-                    
-                    // Rating Section
-                    ratingSection
-                    
-                    // Review Title
-                    reviewTitleSection
-                    
-                    // Review Content
-                    reviewContentSection
-                    
-                    // Setup Info
-                    setupInfoSection
-                    
-                    // Photo Upload
-                    photoUploadSection
-                    
-                    Spacer(minLength: 100)
-                }
-                .padding()
-            }
-            .navigationTitle("Add Review")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.4, green: 0.5, blue: 1.0),
+                    Color(red: 0.3, green: 0.4, blue: 0.9)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+  
+                headerSection
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Post") {
-                        submitReview()
-                    }
-                    .disabled(!isFormValid)
-                    .fontWeight(.semibold)
-                }
+                // Main content card
+                contentCard
+                
+                Spacer()
             }
         }
+        .navigationBarHidden(true)
         .photosPicker(isPresented: $showingImagePicker, selection: $selectedPhotos, maxSelectionCount: 5, matching: .images)
         .onChange(of: selectedPhotos) { _, newItems in
             loadSelectedPhotos(newItems)
+        }
+    }
+    
+    private var headerSection: some View {
+        VStack(spacing: 20) {
+            // Top spacing
+            Spacer()
+            
+            // Navigation buttons
+            HStack {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .medium))
+                
+                Spacer()
+                
+                Text("Add Review")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Button("Post") {
+                    submitReview()
+                }
+                .disabled(!isFormValid)
+                .foregroundColor(isFormValid ? .white : .white.opacity(0.5))
+                .font(.system(size: 16, weight: .semibold))
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 0)
+            
+            Spacer()
+        }
+        .frame(height: 100)
+    }
+    
+    private var contentCard: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            // White card container
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // Speaker Info Header
+                        speakerInfoHeader
+                        
+                        // Rating Section
+                        ratingSection
+                        
+                        // Review Title
+                        reviewTitleSection
+                        
+                        // Review Content
+                        reviewContentSection
+                        
+                        // Setup Info
+                        setupInfoSection
+                        
+                        // Photo Upload
+                        photoUploadSection
+                        
+                        Spacer(minLength: 20)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 32)
+                    .padding(.bottom, 0)
+                }
+                backButtonSection
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 32)
+            }
+            .background(Color.white)
+            .cornerRadius(32)
+            .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 0)
         }
     }
     
@@ -234,7 +294,8 @@ struct AddReviewView: View {
                     GridItem(.flexible()),
                     GridItem(.flexible())
                 ], spacing: 8) {
-                    ForEach(Array(setupPhotos.enumerated()), id: \.offset) { index, image in
+                    ForEach(Array(setupPhotos.enumerated()), id: \.offset) { element in
+                        let (index, image) = element
                         ZStack(alignment: .topTrailing) {
                             Image(uiImage: image)
                                 .resizable()
@@ -296,7 +357,7 @@ struct AddReviewView: View {
     
     private func loadSelectedPhotos(_ items: [PhotosPickerItem]) {
         for item in items {
-            item.loadTransferable(type: Data.self) { result in
+            item.loadTransferable(type: Data.self) { (result: Result<Data?, Error>) in
                 switch result {
                 case .success(let data):
                     if let data = data, let image = UIImage(data: data) {
@@ -327,7 +388,7 @@ struct AddReviewView: View {
         )
         
         // Update the review with additional info
-        let request: NSFetchRequest<SpeakerReview> = SpeakerReview.fetchRequest()
+        let request = NSFetchRequest<SpeakerReview>(entityName: "SpeakerReview")
         request.predicate = NSPredicate(format: "user == %@ AND speakerModel == %@", user, speaker)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \SpeakerReview.createdAt, ascending: false)]
         request.fetchLimit = 1
@@ -339,7 +400,7 @@ struct AddReviewView: View {
                 latestReview.systemType = systemType.isEmpty ? nil : systemType
                 
                 if !photoData.isEmpty {
-                    latestReview.setupPhotos = photoData as NSArray
+                    latestReview.setupPhotos = NSArray(array: photoData)
                 }
                 
                 try viewContext.save()
@@ -349,6 +410,20 @@ struct AddReviewView: View {
         }
         
         dismiss()
+    }
+    
+    private var backButtonSection: some View {
+        Button(action: { dismiss() }) {
+            Text("Back")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.blue)
+                .cornerRadius(16)
+        }
+        .padding(.top, 16)
     }
 }
 
