@@ -52,9 +52,9 @@ class AuthenticationManager: ObservableObject {
     }
 
     func signup(username: String, email: String, password: String) -> Bool {
-        guard let context = viewContext else { 
+        guard let context = viewContext else {
             authenticationError = "Database not available"
-            return false 
+            return false
         }
 
         let request = NSFetchRequest<NSManagedObject>(entityName: "User")
@@ -103,9 +103,9 @@ class AuthenticationManager: ObservableObject {
     }
 
     func login(email: String, password: String) -> Bool {
-        guard let context = viewContext else { 
+        guard let context = viewContext else {
             authenticationError = "Database not available"
-            return false 
+            return false
         }
 
         let request = NSFetchRequest<NSManagedObject>(entityName: "User")
@@ -134,11 +134,25 @@ class AuthenticationManager: ObservableObject {
             
             if storedPassword == hashedInputPassword {
                 print("DEBUG: Password match successful")
+                
+                // Clean up any invalid SavedLayout entities before setting login status
+                cleanupInvalidSavedLayouts(in: context)
+                
                 user.setValue(true, forKey: "isLoggedIn")
-                try context.save()
-                currentUser = user
-                isAuthenticated = true
-                return true
+                
+                do {
+                    try context.save()
+                    currentUser = user
+                    isAuthenticated = true
+                    return true
+                } catch {
+                    print("DEBUG: Failed to save login state: \(error)")
+                    // If save fails, still mark as authenticated since password was correct
+                    currentUser = user
+                    isAuthenticated = true
+                    authenticationError = "Login successful but data sync issue detected"
+                    return true
+                }
             } else {
                 print("DEBUG: Password match failed")
                 authenticationError = "Invalid credentials"
@@ -148,6 +162,30 @@ class AuthenticationManager: ObservableObject {
             print("DEBUG: Login failed with error: \(error)")
             authenticationError = "Login failed"
             return false
+        }
+    }
+    
+    private func cleanupInvalidSavedLayouts(in context: NSManagedObjectContext) {
+        let layoutRequest = NSFetchRequest<NSManagedObject>(entityName: "SavedLayout")
+        layoutRequest.predicate = NSPredicate(format: "speakerPositions == nil")
+        
+        do {
+            let invalidLayouts = try context.fetch(layoutRequest)
+            print("DEBUG: Found \(invalidLayouts.count) invalid SavedLayout entities")
+            
+            for layout in invalidLayouts {
+                // Either fix the invalid layout or delete it
+                if let layoutId = layout.value(forKey: "id") as? String {
+                    print("DEBUG: Fixing SavedLayout with ID: \(layoutId)")
+                    // Set a default value for speakerPositions to make it valid
+                    layout.setValue("[]", forKey: "speakerPositions") // Empty JSON array as default
+                } else {
+                    print("DEBUG: Deleting invalid SavedLayout without ID")
+                    context.delete(layout)
+                }
+            }
+        } catch {
+            print("DEBUG: Error cleaning up invalid SavedLayouts: \(error)")
         }
     }
 
