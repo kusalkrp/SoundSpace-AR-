@@ -8,7 +8,9 @@ import SwiftUI
 
 struct OnboardingView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var showingUserGuide = false
+    @State private var showingLogin = false
     
     var body: some View {
         ZStack {
@@ -95,7 +97,7 @@ struct OnboardingView: View {
                         
                         // Skip Tutorial Button
                         Button(action: {
-                            hasSeenOnboarding = true
+                            showingLogin = true
                         }) {
                             Text("Skip Tutorial & Get Started")
                                 .font(.subheadline)
@@ -118,8 +120,11 @@ struct OnboardingView: View {
         .sheet(isPresented: $showingUserGuide) {
             UserGuideView()
                 .onDisappear {
-                    hasSeenOnboarding = true
+                    showingLogin = true
                 }
+        }
+        .fullScreenCover(isPresented: $showingLogin) {
+            LoginView()
         }
     }
 }

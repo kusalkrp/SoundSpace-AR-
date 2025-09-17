@@ -17,6 +17,7 @@ struct RoomScanningView: View {
     @State private var isScanning = false
     @State private var scanProgress: Float = 0.0
     @State private var instructions: String = "Point your camera at the room and move around to scan"
+    @State private var showingTips = false
 
     var body: some View {
         ZStack {
@@ -38,6 +39,22 @@ struct RoomScanningView: View {
                     .cornerRadius(8)
 
                     Spacer()
+                    
+                    // Tips button
+                    Button(action: {
+                        showingTips.toggle()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "lightbulb.fill")
+                            Text("Tips")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.orange.opacity(0.8))
+                        .cornerRadius(20)
+                    }
 
                     if isScanning {
                         VStack(alignment: .trailing, spacing: 4) {
@@ -54,6 +71,13 @@ struct RoomScanningView: View {
                     }
                 }
                 .padding()
+
+                // Tips tile - positioned below top controls
+                if showingTips {
+                    ScanningTipsView()
+                        .padding(.horizontal)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
                 Spacer()
 
@@ -135,6 +159,7 @@ struct RoomScanningView: View {
                 .padding(.bottom, 30)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: showingTips)
         .onAppear {
             roomScanner.onDimensionsUpdated = { dimensions in
                 self.scannedDimensions = dimensions
@@ -379,4 +404,124 @@ struct RoomScanningView_Previews: PreviewProvider {
     static var previews: some View {
         RoomScanningView()
     }
+}
+
+// MARK: - Scanning Tips View
+struct ScanningTipsView: View {
+    @State private var currentTipIndex = 0
+    @State private var timer: Timer?
+    
+    private let tips = [
+        TipItem(
+            icon: "move.3d",
+            title: "Move Slowly",
+            description: "Walk around the room slowly to capture all surfaces clearly"
+        ),
+        TipItem(
+            icon: "light.max",
+            title: "Good Lighting",
+            description: "Ensure the room is well-lit for better AR tracking"
+        ),
+        TipItem(
+            icon: "rectangle.stack",
+            title: "Scan All Walls",
+            description: "Point your camera at each wall, floor, and ceiling"
+        ),
+        TipItem(
+            icon: "arrow.clockwise",
+            title: "Multiple Angles",
+            description: "Scan corners and edges from different angles"
+        ),
+        TipItem(
+            icon: "hand.raised.fill",
+            title: "Hold Steady",
+            description: "Keep your device steady when scanning surfaces"
+        ),
+        TipItem(
+            icon: "exclamationmark.triangle",
+            title: "Avoid Obstacles",
+            description: "Move furniture or objects that might block surfaces"
+        )
+    ]
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Header
+            HStack {
+                Image(systemName: "lightbulb.fill")
+                    .foregroundColor(.orange)
+                Text("Scanning Tips")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(currentTipIndex + 1)/\(tips.count)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            // Current tip
+            HStack(spacing: 12) {
+                Image(systemName: tips[currentTipIndex].icon)
+                    .font(.title2)
+                    .foregroundColor(.blue)
+                    .frame(width: 30)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tips[currentTipIndex].title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    
+                    Text(tips[currentTipIndex].description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                
+                Spacer()
+            }
+            
+            // Tip navigation dots
+            HStack(spacing: 8) {
+                ForEach(0..<tips.count, id: \.self) { index in
+                    Circle()
+                        .fill(index == currentTipIndex ? Color.blue : Color.gray.opacity(0.3))
+                        .frame(width: 8, height: 8)
+                        .onTapGesture {
+                            currentTipIndex = index
+                            restartTimer()
+                        }
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .onAppear {
+            startTimer()
+        }
+        .onDisappear {
+            timer?.invalidate()
+        }
+    }
+    
+    private func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                currentTipIndex = (currentTipIndex + 1) % tips.count
+            }
+        }
+    }
+    
+    private func restartTimer() {
+        timer?.invalidate()
+        startTimer()
+    }
+}
+
+// MARK: - Tip Item Model
+struct TipItem {
+    let icon: String
+    let title: String
+    let description: String
 }
