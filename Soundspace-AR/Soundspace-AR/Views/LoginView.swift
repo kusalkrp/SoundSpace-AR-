@@ -35,7 +35,7 @@ struct LoginView: View {
     // Validation states
     @State private var showValidationHints = false
 
-    enum Field {
+    enum Field: CaseIterable {
         case email, password
         case suUsername, suEmail, suPassword, suConfirm
     }
@@ -57,7 +57,6 @@ struct LoginView: View {
         .sheet(isPresented: $showingForgotPassword) {
             ForgotPasswordView(authManager: authManager)
         }
-        .onSubmit(handleSubmit)
         .toolbar {
             toolbarContent
         }
@@ -183,22 +182,16 @@ struct LoginView: View {
 
     // MARK: - Actions
     private func switchToLogin() {
-        withAnimation(.easeInOut) { selectedAuthPage = 0 }
+        withAnimation(.easeInOut) { 
+            selectedAuthPage = 0 
+            focusedField = nil // Clear focus when switching
+        }
     }
     
     private func switchToSignup() {
-        withAnimation(.easeInOut) { selectedAuthPage = 1 }
-    }
-    
-    private func handleSubmit() {
-        switch focusedField {
-        case .email: focusedField = .password
-        case .password: performLogin()
-        case .suUsername: focusedField = .suEmail
-        case .suEmail: focusedField = .suPassword
-        case .suPassword: focusedField = .suConfirm
-        case .suConfirm: performSignup()
-        case .none: break
+        withAnimation(.easeInOut) { 
+            selectedAuthPage = 1 
+            focusedField = nil // Clear focus when switching
         }
     }
 
@@ -216,6 +209,9 @@ struct LoginView: View {
                 .keyboardType(.emailAddress)
                 .disableAutocorrection(true)
                 .textContentType(.emailAddress)
+                .onSubmit {
+                    focusedField = .password
+                }
             
             SecureField("Password", text: $password)
                 .textFieldStyle(PlainTextFieldStyle())
@@ -225,6 +221,10 @@ struct LoginView: View {
                 .cornerRadius(8)
                 .focused($focusedField, equals: .password)
                 .textContentType(.password)
+                .onSubmit {
+                    focusedField = nil
+                    performLogin()
+                }
             
             HStack {
                 Button(action: { rememberMe.toggle() }) {
@@ -259,6 +259,7 @@ struct LoginView: View {
                     .cornerRadius(12)
             }
             .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
+            
             // Face ID login button
             if authManager.biometricType == .faceID {
                 Button(action: {
@@ -316,6 +317,9 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(showValidationHints && suUsername.isEmpty ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
                 )
+                .onSubmit {
+                    focusedField = .suEmail
+                }
             
             // Always reserve space for validation hint to prevent layout shifts
             Text(showValidationHints && suUsername.isEmpty ? "Username is required" : "")
@@ -341,6 +345,9 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(showValidationHints && (suEmail.isEmpty || !isValidEmail(suEmail)) ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
                 )
+                .onSubmit {
+                    focusedField = .suPassword
+                }
             
             // Always reserve space for validation hint to prevent layout shifts
             Text(showValidationHints && suEmail.isEmpty ? "Email is required" : 
@@ -364,6 +371,9 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(showValidationHints && (suPassword.isEmpty || suPassword.count < 6) ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
                 )
+                .onSubmit {
+                    focusedField = .suConfirm
+                }
             
             // Always reserve space for validation hint to prevent layout shifts
             Text(showValidationHints && suPassword.isEmpty ? "Password is required" : 
@@ -387,6 +397,11 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(showValidationHints && (suConfirmPassword.isEmpty || suPassword != suConfirmPassword) ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
                 )
+                .onSubmit {
+                    focusedField = nil
+                    showValidationHints = true
+                    performSignup()
+                }
             
             // Always reserve space for validation hint to prevent layout shifts
             Text(showValidationHints && suConfirmPassword.isEmpty ? "Please confirm your password" : 
