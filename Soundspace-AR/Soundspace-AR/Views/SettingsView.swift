@@ -9,12 +9,14 @@ import LocalAuthentication
 
 struct SettingsView: View {
     @EnvironmentObject var authManager: AuthenticationManager
+    @StateObject private var notificationManager = NotificationManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var useBiometricAuth: Bool = true
     @State private var remindersEnabled: Bool = true
     @State private var useARAnchoring: Bool = true
     @State private var showingEditProfile: Bool = false
     @State private var showingChangePassword: Bool = false
+    @State private var showingHelpAbout: Bool = false
     
     // Computed properties to get user data from AuthenticationManager
     private var username: String {
@@ -47,6 +49,9 @@ struct SettingsView: View {
         .sheet(isPresented: $showingChangePassword) {
             ChangePasswordView()
                 .environmentObject(authManager)
+        }
+        .sheet(isPresented: $showingHelpAbout) {
+            HelpAboutView()
         }
     }
     
@@ -179,7 +184,30 @@ struct SettingsView: View {
                     .foregroundColor(.secondary)
                     .font(.system(size: 14, weight: .semibold))
             }
-            .onTapGesture { /* help/about */ }
+            .onTapGesture {
+                showingHelpAbout = true
+            }
+
+            // Notifications toggle
+            tileRow {
+                HStack(spacing: 8) {
+                    Image(systemName: "bell")
+                        .foregroundColor(.blue)
+                        .font(.system(size: 16))
+                    Text("Push Notifications")
+                }
+                Spacer()
+                Toggle("", isOn: $notificationManager.notificationsEnabled)
+                    .labelsHidden()
+                    .toggleStyle(SwitchToggleStyle(tint: .blue))
+                    .onChange(of: notificationManager.notificationsEnabled) { _, newValue in
+                        if newValue {
+                            notificationManager.requestAuthorization()
+                            // Schedule weekly tips when notifications are enabled
+                            notificationManager.scheduleWeeklyTips()
+                        }
+                    }
+            }
 
             tileRow {
                 Text("Reminders & Calibration Tips")

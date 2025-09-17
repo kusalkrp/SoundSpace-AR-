@@ -8,6 +8,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var authManager: AuthenticationManager
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var showSplash = true
     
     var body: some View {
@@ -15,7 +16,7 @@ struct RootView: View {
             if showSplash {
                 SplashScreen()
                     .onAppear {
-                        // Show splash for 2 seconds, then transition to auth check
+                        // Show splash for 2 seconds, then transition to onboarding or auth check
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                             withAnimation {
                                 showSplash = false
@@ -23,13 +24,19 @@ struct RootView: View {
                         }
                     }
             } else {
-                // Check authentication state
-                if authManager.isAuthenticated {
-                    // User is authenticated, show main app
-                    MainTabView()
+                // Check if user has seen onboarding
+                if !hasSeenOnboarding {
+                    // Show onboarding first
+                    OnboardingView()
                 } else {
-                    // User not authenticated, show login/signup
-                    LoginView()
+                    // Check authentication state after onboarding
+                    if authManager.isAuthenticated {
+                        // User is authenticated, show main app
+                        MainTabView()
+                    } else {
+                        // User not authenticated, show login/signup
+                        LoginView()
+                    }
                 }
             }
         }

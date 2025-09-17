@@ -8,6 +8,7 @@ import SwiftUI
 
 struct OnboardingView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var showingUserGuide = false
     
     var body: some View {
         ZStack {
@@ -63,12 +64,18 @@ struct OnboardingView: View {
                         .padding(.horizontal, 20)
                         .lineSpacing(4)
                     
-                    Button(action: {
-                        hasSeenOnboarding = true
-                    }) {
-                        Text("Get Started")
-                            .font(.headline)
-                            .fontWeight(.semibold)
+                    VStack(spacing: 12) {
+                        // Start Interactive Tutorial Button
+                        Button(action: {
+                            showingUserGuide = true
+                        }) {
+                            HStack {
+                                Image(systemName: "play.circle.fill")
+                                    .font(.title3)
+                                Text("Start Interactive Tutorial")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                            }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
@@ -83,8 +90,21 @@ struct OnboardingView: View {
                                 )
                             )
                             .cornerRadius(28)
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Skip Tutorial Button
+                        Button(action: {
+                            hasSeenOnboarding = true
+                        }) {
+                            Text("Skip Tutorial & Get Started")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.gray)
+                                .underline()
+                        }
+                        .padding(.horizontal, 20)
                     }
-                    .padding(.horizontal, 20)
                     .padding(.top, 8)
                 }
                 .padding(.vertical, 32)
@@ -94,6 +114,12 @@ struct OnboardingView: View {
                 .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
                 .padding(.horizontal, 20)
             }
+        }
+        .sheet(isPresented: $showingUserGuide) {
+            UserGuideView()
+                .onDisappear {
+                    hasSeenOnboarding = true
+                }
         }
     }
 }

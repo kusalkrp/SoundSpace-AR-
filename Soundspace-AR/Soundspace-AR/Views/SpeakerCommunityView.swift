@@ -99,24 +99,28 @@ struct SpeakerCommunityView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
+                HStack(spacing: 32) {
                     Button(action: {
                         showingFilters = true
                     }) {
                         Image(systemName: "line.horizontal.3.decrease.circle")
-                            .font(.system(size: 20))
+                            .font(.system(size: 24, weight: .medium))
                             .foregroundColor(.blue)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     
                     Button(action: {
                         showingShareSheet = true
                     }) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 20))
+                            .font(.system(size: 24, weight: .medium))
                             .foregroundColor(.blue)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                 }
-                .padding(.trailing, 4)
+                .padding(.trailing, 8)
             }
         }
         .sheet(isPresented: $showingFilters) {
@@ -146,7 +150,7 @@ struct SpeakerCommunityView: View {
     private var tabSelector: some View {
         VStack(spacing: 0) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
+                HStack(spacing: 8) {
                     ForEach(CommunityTab.allCases, id: \.rawValue) { tab in
                         Button(action: {
                             selectedTab = tab.rawValue
@@ -159,14 +163,14 @@ struct SpeakerCommunityView: View {
                                     .font(.caption)
                                     .fontWeight(.medium)
                             }
-                            .frame(maxWidth: .infinity)
+                            .frame(minWidth: 80)
                             .padding(.vertical, 12)
                             .background(selectedTab == tab.rawValue ? Color.blue.opacity(0.1) : Color.clear)
                             .foregroundColor(selectedTab == tab.rawValue ? .blue : .secondary)
                         }
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 20)
                 .padding(.vertical, 8)
             }
             
@@ -202,7 +206,7 @@ struct SpeakerCommunityView: View {
                     .fontWeight(.bold)
                     .padding(.horizontal)
                 
-                if let reviews = speakerDB?.recentReviews.filter({ 
+                if let reviews = speakerDB?.recentReviews.filter({
                     guard let photos = $0.setupPhotos as? [Data] else { return false }
                     return !photos.isEmpty
                 }) {
