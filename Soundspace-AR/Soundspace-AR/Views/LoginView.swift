@@ -1,38 +1,36 @@
 // LoginView.swift
 // Soundspace-AR
-//
-// Created by Kusal on 2025-08-04.
-//
 
-
-// LoginView.swift
-import SwiftUI
+// Combined login and signup interface with biometric authentication support
 
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthenticationManager
-    // Login state
+
+    // Authentication form state
     @State private var email = ""
     @State private var password = ""
     @State private var rememberMe = false
     @State private var isLoggingIn = false
-    // Shared
+
+    // UI state management
     @State private var showingAlert = false
     @State private var alertTitle = "Authentication"
     @State private var alertMessage = ""
     @State private var showingForgotPassword = false
     @FocusState private var focusedField: Field?
-    // Pager control: 0 = Login, 1 = Sign Up
+
+    // Tab view control for switching between login and signup
     @State private var selectedAuthPage = 0
-    
-    // Inline Sign Up state
+
+    // Signup form state
     @State private var suUsername = ""
     @State private var suEmail = ""
     @State private var suPassword = ""
     @State private var suConfirmPassword = ""
     @State private var suRememberMe = false
     @State private var isSigningUp = false
-    
-    // Validation states
+
+    // Form validation state
     @State private var showValidationHints = false
 
     enum Field: CaseIterable {
@@ -239,7 +237,6 @@ struct LoginView: View {
                 Spacer()
             }
             
-            // Forgot Password link
             HStack {
                 Spacer()
                 Button("Forgot Password?") {
@@ -259,8 +256,8 @@ struct LoginView: View {
                     .cornerRadius(12)
             }
             .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
-            
-            // Face ID login button
+
+            // Show Face ID login option if device supports it
             if authManager.biometricType == .faceID {
                 Button(action: {
                     performFaceIDLogin()
@@ -284,8 +281,7 @@ struct LoginView: View {
                 }
                 .padding(.top, 8)
             }
-            
-            // Inline link to switch to Sign Up
+
             HStack {
                 Text("Don't have an account?")
                     .font(.subheadline)
@@ -440,8 +436,7 @@ struct LoginView: View {
                     .cornerRadius(25)
             }
             .disabled(isSigningUp)
-            
-            // Inline link to switch to Login
+
             HStack {
                 Text("Already have an account?")
                     .font(.subheadline)
@@ -512,25 +507,17 @@ struct LoginView: View {
     }
 
     private func performSignup() {
-        print("DEBUG: performSignup called")
-        print("DEBUG: isSignupValid = \(isSignupValid)")
-        print("DEBUG: suUsername = '\(suUsername)', suEmail = '\(suEmail)', suPassword.count = \(suPassword.count), suConfirmPassword.count = \(suConfirmPassword.count)")
-        
         guard isSignupValid else {
-            print("DEBUG: Form validation failed - showing hints")
             showValidationHints = true
             return
         }
-        
-        print("DEBUG: Starting signup process")
+
         showValidationHints = false // Hide hints on successful validation
         isSigningUp = true
         focusedField = nil
         Task {
             await MainActor.run {
-                print("DEBUG: Calling authManager.signup")
                 if authManager.signup(username: suUsername, email: suEmail, password: suPassword) {
-                    print("DEBUG: Signup successful")
                     // Store credentials for Face ID if biometric auth is available
                     if authManager.biometricType != .none {
                         UserDefaults.standard.set(suEmail, forKey: "faceIDEmail")
@@ -541,13 +528,12 @@ struct LoginView: View {
                     alertTitle = "Success!"
                     alertMessage = "Account created successfully! You can now log in."
                     showingAlert = true
-                    
+
                     // After success, switch to login page and prefill email
                     selectedAuthPage = 0
                     email = suEmail
                     password = ""
                 } else {
-                    print("DEBUG: Signup failed with error: \(authManager.authenticationError ?? "Unknown error")")
                     alertTitle = "Signup Error"
                     alertMessage = authManager.authenticationError ?? "Signup failed"
                     showingAlert = true

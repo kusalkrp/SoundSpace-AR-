@@ -1,8 +1,9 @@
 // SignupView.swift
 // Soundspace-AR
 //
-// Created by Kusal on 2025-08-04.
-//
+
+// Dedicated signup interface with form validation and biometric setup
+
 
 import SwiftUI
 
@@ -32,21 +33,18 @@ struct SignupView: View {
             backgroundGradient
             
             VStack(spacing: 0) {
-                // Title section at top
                 VStack {
                     Spacer()
-                    
+
                     Text("SoundSpace AR")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
-                    
+
                     Spacer()
                 }
-                
-                // White card at bottom
+
                 VStack(spacing: 24) {
-                    // Toggle between Login and Sign Up
                     HStack(spacing: 0) {
                         loginToggleButton
                         signUpToggleButton
@@ -54,17 +52,15 @@ struct SignupView: View {
                     .padding(4)
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(26)
-                    
+
                     VStack(spacing: 16) {
-                        // Username field
                         TextField("Username", text: $username)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .focused($focusedField, equals: .username)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                             .textContentType(.username)
-                        
-                        // Email field
+
                         TextField("Email", text: $email)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .focused($focusedField, equals: .email)
@@ -72,30 +68,26 @@ struct SignupView: View {
                             .keyboardType(.emailAddress)
                             .disableAutocorrection(true)
                             .textContentType(.emailAddress)
-                        
-                        // Password field
+
                         SecureField("Password", text: $password)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .focused($focusedField, equals: .password)
                             .textContentType(.newPassword)
-                        
-                        // Confirm Password field
+
                         SecureField("Confirm password", text: $confirmPassword)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .focused($focusedField, equals: .confirmPassword)
                             .textContentType(.newPassword)
-                        
-                        // Remember me
+
                         HStack {
                             rememberMeButton
                             Spacer()
                         }
                     }
-                    
-                    // Sign Up button
+
                     mainSignUpButton
                     
-                    // Face ID setup section - show after successful signup
+                    // Show Face ID setup option after successful account creation
                     if signupSuccessful && authManager.biometricType == .faceID {
                         VStack(spacing: 16) {
                             Text("Enable Face ID")
@@ -161,7 +153,6 @@ struct SignupView: View {
                         .padding(.horizontal, 8)
                     }
                     
-                    // Sign in link
                     HStack {
                         Text("Already have an account?")
                             .font(.subheadline)
@@ -202,7 +193,7 @@ struct SignupView: View {
         }
     }
     
-    // Computed properties to break up complex expressions
+    // MARK: - View Components
     private var backgroundGradient: some View {
         LinearGradient(
             gradient: Gradient(colors: [

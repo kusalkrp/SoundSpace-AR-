@@ -1,8 +1,6 @@
 // AuthenticationManager.swift
 // Soundspace-AR
 //
-// Created by Kusal on 2025-08-04.
-//
 
 
 
@@ -335,7 +333,7 @@ class AuthenticationManager: ObservableObject {
     }
     
     func refreshAuthenticationStatus() async {
-        // iOS 18.6 - Enhanced authentication status refresh
+        // Enhanced authentication status refresh
         guard viewContext != nil else { return }
         
         // Refresh current user status

@@ -1,8 +1,6 @@
 // HelpAboutView.swift
 // Soundspace-AR
 //
-// Created by Assistant on 2025-01-17.
-//
 
 import SwiftUI
 

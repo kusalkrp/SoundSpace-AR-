@@ -1,8 +1,9 @@
 // SettingsView.swift
 // Soundspace-AR
 //
-// Created by Kusal on 2025-08-04.
-//
+
+// User profile and app settings interface with security and notification controls
+
 
 import SwiftUI
 import LocalAuthentication
@@ -17,19 +18,18 @@ struct SettingsView: View {
     @State private var showingEditProfile: Bool = false
     @State private var showingChangePassword: Bool = false
     @State private var showingHelpAbout: Bool = false
-    
-    // Computed properties to get user data from AuthenticationManager
+
+    // MARK: - User Data Accessors
     private var username: String {
         authManager.currentUser?.value(forKey: "username") as? String ?? "Unknown User"
     }
-    
+
     private var email: String {
         authManager.currentUser?.value(forKey: "email") as? String ?? "No Email"
     }
-    
+
     var body: some View {
         ZStack {
-            // Blue gradient background to match design
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color(red: 0.4, green: 0.5, blue: 1.0),
@@ -69,23 +69,20 @@ struct SettingsView: View {
     
     private var contentCard: some View {
         VStack(spacing: 0) {
-            // Scrollable content
             ScrollView {
                 VStack(spacing: 24) {
                     profileSection
                     accountInformationSection
                     securitySection
                     otherSection
-                    
-                    // Add padding at bottom for fixed button
+
                     Spacer(minLength: 80)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 28)
                 .padding(.bottom, 16)
             }
-            
-            // Fixed back button at bottom
+
             VStack {
                 backButton
                     .padding(.horizontal, 20)
@@ -103,7 +100,6 @@ struct SettingsView: View {
     
     private var profileSection: some View {
         VStack(spacing: 12) {
-            // Profile picture with edit badge
             ZStack {
                 Circle()
                     .fill(Color.gray.opacity(0.2))
@@ -188,7 +184,6 @@ struct SettingsView: View {
                 showingHelpAbout = true
             }
 
-            // Notifications toggle
             tileRow {
                 HStack(spacing: 8) {
                     Image(systemName: "bell")
@@ -203,7 +198,6 @@ struct SettingsView: View {
                     .onChange(of: notificationManager.notificationsEnabled) { _, newValue in
                         if newValue {
                             notificationManager.requestAuthorization()
-                            // Schedule weekly tips when notifications are enabled
                             notificationManager.scheduleWeeklyTips()
                         }
                     }
@@ -225,7 +219,6 @@ struct SettingsView: View {
                     .toggleStyle(SwitchToggleStyle(tint: .blue))
             }
             
-            // Logout button
             Button(action: {
                 authManager.logout()
                 dismiss()

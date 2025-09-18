@@ -6,7 +6,7 @@
 //
 // Uses built-in VNRecognizeObjectsRequest & VNClassifyImageRequest labels.
 //
-// Created on 2025-08-18.
+
 
 import Foundation
 

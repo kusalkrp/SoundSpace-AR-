@@ -1,8 +1,7 @@
 // ARSpeakerPlacementView.swift
 // Soundspace-AR
 //
-// Created by Kusal on 2025-08-04.
-//
+
 
 import SwiftUI
 import ARKit
@@ -159,7 +158,7 @@ class ARViewModel: ObservableObject {
     
     func checkDistance() {
         showingDistanceResults = true
-        isDistanceBalanced = true // Simplified for now
+        isDistanceBalanced = true 
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             self.showingDistanceResults = false

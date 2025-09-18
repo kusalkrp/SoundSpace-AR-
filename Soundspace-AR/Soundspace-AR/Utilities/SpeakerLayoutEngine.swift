@@ -3,8 +3,6 @@
 //
 // Generates recommended speaker placement transforms (no measured calibration yet)
 // for a given audio system relative to a listener reference transform.
-//
-// Created 2025-08-18.
 
 import Foundation
 import simd

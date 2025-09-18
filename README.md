@@ -26,22 +26,125 @@ A comprehensive iOS app that uses augmented reality to help users set up surroun
 - **Core Data Storage**: All data stored locally, no external dependencies
 - **User Profiles**: Personalized experience with saved preferences
 
-## 🛠 Technical Implementation
+## � Codebase Structure
 
-### Frameworks Used
-- **SwiftUI**: Modern declarative UI framework
-- **ARKit**: Augmented reality speaker placement
-- **Core Data**: Local data persistence
-- **Core ML**: Room analysis and classification
-- **LocalAuthentication**: Biometric authentication
-- **AVFoundation**: Camera access for room detection
-- **Vision**: Image analysis for room classification
+### Project Organization
+```
+Soundspace-AR/
+├── Soundspace-AR/
+│   ├── ContentView.swift              # Main content view (legacy)
+│   ├── Persistence.swift              # Core Data setup and preview data
+│   ├── Soundspace_ARApp.swift         # App entry point with environment objects
+│   ├── Assets.xcassets/               # App icons and assets
+│   ├── Models/
+│   │   ├── AudioSystemType.swift      # Audio system configurations (2.1, 5.1, 7.1)
+│   │   ├── RoomType.swift             # Room type definitions with icons
+│   │   ├── Speaker.swift              # Speaker model with positions and types
+│   │   └── SpeakerDatabase.swift      # Speaker database management
+│   ├── Utilities/
+│   │   ├── AuthenticationManager.swift    # User auth and biometric support
+│   │   ├── NotificationManager.swift      # Local notifications
+│   │   ├── RoomAnalysisHeuristics.swift   # Room analysis algorithms
+│   │   └── SpeakerLayoutEngine.swift      # Speaker placement calculations
+│   ├── Views/
+│   │   ├── RootView.swift              # Root navigation with auth routing
+│   │   ├── MainTabView.swift           # Custom tab bar navigation
+│   │   ├── DashboardView.swift         # Home screen with quick actions
+│   │   ├── ARSpeakerPlacementView.swift # AR speaker placement interface
+│   │   ├── MLRoomDetectionView.swift   # AI-powered room analysis
+│   │   ├── SpeakerCommunityView.swift  # Speaker database browser
+│   │   ├── SpeakerDetailView.swift     # Detailed speaker information
+│   │   ├── SavedLayoutsView.swift      # Saved speaker configurations
+│   │   ├── SettingsView.swift          # App settings and preferences
+│   │   ├── LoginView.swift             # User login interface
+│   │   ├── SignupView.swift            # User registration
+│   │   ├── OnboardingView.swift        # First-time user introduction
+│   │   ├── RoomScanningView.swift      # AR room scanning
+│   │   ├── RoomDetectionResultsView.swift # Analysis results display
+│   │   ├── SaveLayoutView.swift        # Save speaker layout
+│   │   ├── AddReviewView.swift         # Add speaker review
+│   │   ├── SpeakerDetailView.swift     # Speaker details and reviews
+│   │   ├── ChangePasswordView.swift    # Password change interface
+│   │   ├── ForgotPasswordView.swift    # Password recovery
+│   │   ├── HelpAboutView.swift         # Help and about information
+│   │   ├── UserGuideView.swift         # User guide and tutorials
+│   │   └── SplashScreen.swift          # App launch splash screen
+│   └── Soundspace_AR.xcdatamodeld/     # Core Data model definitions
+├── Soundspace-AR.xcodeproj/            # Xcode project files
+├── Soundspace-ARTests/                 # Unit test suite
+└── Soundspace-ARUITests/               # UI test suite
+```
 
-### Architecture
-- **MVVM Pattern**: Clean separation of concerns
-- **Core Data Models**: User, SpeakerBrand, SpeakerModel, SpeakerReview, SavedLayout, WishlistItem
-- **Environment Objects**: Shared state management across views
-- **Modular Design**: Reusable components and views
+### Key Components Overview
+
+#### Core Architecture
+- **MVVM Pattern**: Clean separation with ViewModels for business logic
+- **Environment Objects**: Shared state management across the app
+- **Core Data**: Local persistence with relationships between entities
+- **SwiftUI Navigation**: Programmatic navigation with custom transitions
+
+#### AR Integration
+- **ARKit**: World tracking and plane detection for speaker placement
+- **RealityKit**: 3D speaker models and scene management
+- **Scene Understanding**: Room geometry analysis for optimal placement
+
+#### AI/ML Features
+- **Vision Framework**: Image analysis for room type classification
+- **Core ML**: Machine learning models for room detection
+- **AVFoundation**: Camera capture and processing for room analysis
+
+#### Authentication System
+- **Local Authentication**: Biometric support (Face ID/Touch ID)
+- **Secure Storage**: Password hashing and secure data handling
+- **User Profiles**: Personalized experience with saved preferences
+
+### Data Flow Architecture
+
+#### User Authentication Flow
+```
+App Launch → SplashScreen → RootView → Auth Check → MainTabView or OnboardingView
+```
+
+#### AR Setup Flow
+```
+Dashboard → Room Selection → Audio System Selection → AR Placement → Save Layout
+```
+
+#### Speaker Database Flow
+```
+Community Tab → Browse Speakers → Filter/Search → Speaker Details → Reviews/Wishlist
+```
+
+### Testing Strategy
+
+#### Unit Tests (`Soundspace-ARTests/`)
+- **SpeakerDatabaseTests**: Database operations and data integrity
+- **AuthenticationTests**: Login/signup and biometric flows
+- **LayoutEngineTests**: Speaker placement calculations
+- **PersistenceTests**: Core Data operations
+
+#### UI Tests (`Soundspace-ARUITests/`)
+- **UserFlows**: Complete user journey testing
+- **ARInteractions**: AR placement and interaction testing
+- **CommunityFeatures**: Speaker browsing and review workflows
+
+### Build Configuration
+
+#### Xcode Requirements
+- **Xcode 15.0+**: Required for SwiftUI and ARKit features
+- **iOS 16.0+**: Minimum deployment target
+- **Swift 5.9+**: Language version for modern Swift features
+
+#### Build Settings
+- **Enable ARKit**: Required for AR features
+- **Camera Usage**: Privacy permissions for room detection
+- **Core Data**: Automatic code generation for entities
+- **SwiftUI Previews**: Preview support with sample data
+
+#### Dependencies
+- **No External Dependencies**: Pure Apple frameworks
+- **System Frameworks**: ARKit, RealityKit, CoreML, Vision, AVFoundation
+- **Local Packages**: All functionality built with native iOS APIs
 
 ## 📱 App Flow
 
@@ -202,13 +305,11 @@ All views include SwiftUI previews with sample data for easy development and tes
 - **Widget Support**: Quick access from home screen
 - **Siri Shortcuts**: Voice commands for common actions
 
-## 📄 License
-
-This project is created for educational purposes. Speaker brand names and images are property of their respective owners.
 
 ## 🤝 Contributing
 
-This is a coursework project demonstrating iOS development skills including:
+Deliverables:
+
 - SwiftUI and UIKit integration
 - Core Data management
 - ARKit implementation
@@ -216,7 +317,3 @@ This is a coursework project demonstrating iOS development skills including:
 - Authentication systems
 - Complex UI/UX design
 
----
-
-Built with ❤️ using Swift and SwiftUI
-– Speaker Positioning Assistant

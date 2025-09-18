@@ -1,8 +1,6 @@
 // SpeakerDatabase.swift
 // Soundspace-AR
 //
-// Created by Assistant on 2025-08-17.
-//
 
 import Foundation
 import CoreData
@@ -326,7 +324,7 @@ class SpeakerDatabaseManager: ObservableObject {
         }
     }
     
-    // iOS 18.6 - Background refresh functionality
+    //  Background refresh functionality
     func refreshFeaturedSpeakers() async {
         await MainActor.run {
             fetchFeaturedSpeakers()

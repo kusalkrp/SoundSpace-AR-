@@ -1,7 +1,6 @@
 // ChangePasswordView.swift
 // Soundspace-AR
 //
-// Created by GitHub Copilot on 2025-09-17.
 
 import SwiftUI
 
@@ -19,7 +18,7 @@ struct ChangePasswordView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Blue gradient background to match design
+                // Blue gradient background 
                 LinearGradient(
                     gradient: Gradient(colors: [
                         Color(red: 0.4, green: 0.5, blue: 1.0),

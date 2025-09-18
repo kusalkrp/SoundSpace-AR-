@@ -1,8 +1,9 @@
 // MainTabView.swift
 // Soundspace-AR
 //
-// Created by Kusal on 2025-08-04.
-//
+
+// Main tab-based navigation interface with custom pill-style tab bar
+
 
 import SwiftUI
 
@@ -47,7 +48,6 @@ struct MainTabView: View {
     
     var body: some View {
         ZStack {
-            // Blue background gradient
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color(red: 0.4, green: 0.5, blue: 1.0),
@@ -59,7 +59,6 @@ struct MainTabView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Main content
                 Group {
                     switch selected {
                     case .home:
@@ -76,7 +75,6 @@ struct MainTabView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // Custom pill tab bar
                 customTabBar
                     .padding(.bottom, 8)
             }
@@ -134,7 +132,9 @@ struct MainTabView: View {
     }
 
 
-// Custom button style for tab items
+// MARK: - Supporting Types
+
+// Custom button style providing press feedback for tab items
 struct TabButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

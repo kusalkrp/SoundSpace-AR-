@@ -1,25 +1,25 @@
 // ForgotPasswordView.swift
 // Soundspace-AR
 //
-// Created by Kusal on 2025-08-04.
-//
+
+// Password reset interface for authenticated users
 
 import SwiftUI
 
 struct ForgotPasswordView: View {
     @ObservedObject var authManager: AuthenticationManager
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var email = ""
     @State private var showingAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
     @State private var isLoading = false
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                // Blue gradient background (same as DashboardView)
+                // Consistent blue gradient background matching app theme
                 LinearGradient(
                     gradient: Gradient(colors: [
                         Color(red: 0.4, green: 0.5, blue: 1.0),
@@ -32,9 +32,10 @@ struct ForgotPasswordView: View {
 
                 VStack {
                     Spacer(minLength: 32)
-                    // Main white tile
+
+                    // Main content card with form elements
                     VStack(spacing: 32) {
-                        // Header
+                        // Password reset header with icon and instructions
                         VStack(spacing: 20) {
                             Image(systemName: "key.fill")
                                 .resizable()
@@ -50,7 +51,8 @@ struct ForgotPasswordView: View {
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 16)
                         }
-                        // Email Field
+
+                        // Email input field with envelope icon
                         HStack {
                             Image(systemName: "envelope")
                                 .foregroundColor(.gray)
@@ -67,7 +69,8 @@ struct ForgotPasswordView: View {
                         .cornerRadius(12)
                         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                         .padding(.horizontal, 8)
-                        // Reset Button
+
+                        // Password reset action button with loading state
                         Button(action: resetPassword) {
                             HStack {
                                 if isLoading {
@@ -87,7 +90,8 @@ struct ForgotPasswordView: View {
                         }
                         .disabled(email.isEmpty || isLoading)
                         .padding(.horizontal, 8)
-                        // Info text
+
+                        // Demo app disclaimer for educational purposes
                         VStack(spacing: 10) {
                             Text("Note: This is a demo app")
                                 .font(.caption)
@@ -100,11 +104,12 @@ struct ForgotPasswordView: View {
                         }
                     }
                     .padding(.vertical, 32)
-                    .padding(.horizontal, 30) // Increased horizontal padding for left/right sides
+                    .padding(.horizontal, 30)
                     .background(Color.white)
                     .cornerRadius(32)
                     .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
                     .frame(maxWidth: 360)
+
                     Spacer(minLength: 32)
                 }
                 .frame(maxHeight: .infinity)
@@ -130,10 +135,11 @@ struct ForgotPasswordView: View {
             Text(alertMessage)
         }
     }
-    
+
+    /// Initiates password reset process with loading state and error handling
     private func resetPassword() {
         isLoading = true
-        
+
         authManager.resetPassword(email: email) { success, message in
             DispatchQueue.main.async {
                 isLoading = false

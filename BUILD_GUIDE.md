@@ -47,11 +47,13 @@ The "CancellationError" in Xcode previews is typically caused by:
 - **Physical Device Required**: ARKit doesn't work in simulator
 - **Camera Access**: Real device needed for ML room detection
 - **Performance**: AR features perform better on device
+- **Supported Devices**: iPhone 6s+, iPad (5th gen)+, iPad Pro all models
 
 ### For Community Features
 - **Simulator Compatible**: Speaker database, reviews, authentication
 - **Core Data**: Works in both simulator and device
 - **UI Testing**: All community features work in simulator
+- **Limitations**: No camera/ML features in simulator
 
 ## Build Settings
 
@@ -61,13 +63,17 @@ The "CancellationError" in Xcode previews is typically caused by:
 <string>Camera access required for AR speaker placement and room analysis</string>
 
 <key>NSFaceIDUsageDescription</key>
-<string>Face ID provides secure authentication</string>
+<string>Face ID provides secure and convenient authentication</string>
+
+<key>NSMicrophoneUsageDescription</key>
+<string>Microphone access for audio system testing (future feature)</string>
 ```
 
 ### Deployment Target
-- iOS 16.0 minimum
-- ARKit requires iOS 11.0+, but advanced features need 16.0+
+- iOS 16.0 minimum (required for Vision framework features)
+- ARKit 4.0+ features for enhanced AR capabilities
 - SwiftUI features optimized for iOS 16.0+
+- Compatible with iPhone 6s and newer
 
 ## Preview Testing Strategy
 
@@ -111,14 +117,14 @@ struct MyView_Previews: PreviewProvider {
     static var previews: some View {
         MyView()
             .environmentObject(AuthenticationManager())
-            .environment(\.managedObjectContext, 
+            .environment(\.managedObjectContext,
                          PersistenceController.preview.container.viewContext)
     }
 }
 ```
 
 ### Core Data Entity Issues
-- Ensure all entities are defined in .xcdatamodeld
+- Ensure all entities are defined in `.xcdatamodeld`
 - Check relationships are properly configured
 - Verify NSManagedObject subclasses are generated
 
@@ -141,4 +147,81 @@ struct MyView_Previews: PreviewProvider {
 - [ ] Quick authentication
 - [ ] Efficient image handling
 
-The app is now configured to work reliably in both simulator (for community features) and device (for AR features) with proper preview support.
+## Advanced Troubleshooting
+
+### AR Session Issues
+**Problem**: AR tracking is unstable or fails to start
+**Solutions**:
+- Ensure good lighting conditions
+- Hold device steady during initialization
+- Check for magnetic interference (move away from magnets)
+- Restart device if AR session fails repeatedly
+- Verify device compatibility (iPhone 6s or newer required)
+
+### Core Data Migration Issues
+**Problem**: App crashes on launch with Core Data errors
+**Solutions**:
+- Delete and reinstall app to reset database
+- Check `.xcdatamodeld` for entity configuration issues
+- Verify all relationships are properly defined
+- Use lightweight migration for model changes
+
+### Authentication Problems
+**Problem**: Biometric authentication fails or password login doesn't work
+**Solutions**:
+- Verify Face ID/Touch ID is properly set up in device settings
+- Check that passwords are hashed correctly (SHA256)
+- Ensure email validation is working
+- Test with different user accounts
+
+### ML Room Detection Issues
+**Problem**: Room analysis fails or gives poor results
+**Solutions**:
+- Ensure iOS 16.0+ for Vision framework support
+- Grant camera permissions
+- Test in well-lit environments
+- Check that Vision classification is available on device
+- Verify fallback to default recommendations works
+
+### Memory Issues
+**Problem**: App crashes due to memory pressure
+**Solutions**:
+- Monitor AR session memory usage
+- Implement proper image compression
+- Use lazy loading for large datasets
+- Dispose of unused AR anchors and entities
+- Optimize Core Data fetch requests
+
+## Build Optimization Tips
+
+### Reducing Build Time
+- Use incremental builds when possible
+- Clean build folder regularly: `Cmd + Shift + K`
+- Close unused Xcode projects
+- Use SwiftUI previews sparingly during development
+- Disable unnecessary build phases
+
+### Improving Performance
+- Profile with Instruments for memory leaks
+- Use Core Data batch operations for large datasets
+- Implement image caching for speaker photos
+- Optimize AR rendering with proper anchor management
+- Use background queues for heavy computations
+
+## Xcode Configuration
+
+### Recommended Settings
+- **Swift Language Version**: 5.9
+- **Build Configuration**: Debug/Release
+- **Deployment Target**: iOS 18.0
+- **Device Orientation**: Portrait
+- **Status Bar Style**: Default
+
+### Development Tools
+- **Xcode 15.0+**: Required for iOS 16 features
+- **Command Line Tools**: Latest version
+- **Simulator**: iPhone 14/iPad Pro for testing
+- **Physical Device**: iPhone/iPad for AR testing
+
+
+

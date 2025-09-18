@@ -2,7 +2,7 @@
 //  SpeakerDatabaseTests.swift
 //  Soundspace-ARTests
 //
-//  Created by Test Suite on 2025-09-17.
+
 //
 
 import Testing

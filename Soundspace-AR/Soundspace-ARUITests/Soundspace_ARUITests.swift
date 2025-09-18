@@ -2,8 +2,7 @@
 //  Soundspace_ARUITests.swift
 //  Soundspace-ARUITests
 //
-//  Created by Kusal on 2025-08-04.
-//
+
 
 import XCTest
 

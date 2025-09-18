@@ -1,10 +1,8 @@
-//
-//  Soundspace_ARApp.swift
-//  Soundspace-AR
-//
-//  Created by Kusal on 2025-08-04.
-//
 // Soundspace_ARApp.swift
+// Soundspace-AR
+//
+
+// Main application entry point with Core Data and environment setup
 
 import SwiftUI
 import CoreData
@@ -23,14 +21,13 @@ struct Soundspace_ARApp: App {
                 .environmentObject(speakerDB)
         }
         .backgroundTask(.appRefresh("com.soundspace.refresh")) {
-            // Background app refresh for iOS 18.6
             await refreshSpeakerDatabase()
         }
     }
-    
+
+    /// Background refresh task for updating speaker database (iOS 18.6+)
     @MainActor
     private func refreshSpeakerDatabase() async {
-        // Refresh speaker database in background
         let context = persistenceController.container.viewContext
         let speakerDB = SpeakerDatabaseManager(context: context)
         await speakerDB.refreshFeaturedSpeakers()

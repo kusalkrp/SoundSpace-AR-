@@ -1,8 +1,7 @@
 // SpeakerDetailView.swift
 // Soundspace-AR
 //
-// Created by Assistant on 2025-08-17.
-//
+
 
 import SwiftUI
 import CoreData

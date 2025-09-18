@@ -1,21 +1,20 @@
 // RootView.swift
 // Soundspace-AR
-//
-// Created by Assistant on 2025-09-17.
-//
+
+// Root navigation view that handles app initialization and authentication routing
 
 import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var showSplash = true
-    
+
     var body: some View {
         ZStack {
             if showSplash {
                 SplashScreen()
                     .onAppear {
-                        // Show splash for 2 seconds, then transition to main flow
+                        // Display splash screen for 2 seconds before transitioning
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                             withAnimation {
                                 showSplash = false
@@ -23,12 +22,10 @@ struct RootView: View {
                         }
                     }
             } else {
-                // Check authentication state
+                // Route based on authentication state
                 if authManager.isAuthenticated {
-                    // User is authenticated, show main app
                     MainTabView()
                 } else {
-                    // User not authenticated, always show onboarding
                     OnboardingView()
                 }
             }
