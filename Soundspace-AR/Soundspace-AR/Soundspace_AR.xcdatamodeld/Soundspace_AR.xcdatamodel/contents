@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
+    <entity name="User" representedClassName="User" syncable="YES" codeGenerationType="class">
+        <attribute name="email" attributeType="String"/>
+        <attribute name="username" attributeType="String"/>
+        <attribute name="password" attributeType="String"/>
+        <attribute name="isLoggedIn" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="biometricEnabled" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <relationship name="savedLayouts" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SavedLayout" inverseName="user" inverseEntity="SavedLayout"/>
+        <relationship name="speakerReviews" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SpeakerReview" inverseName="user" inverseEntity="SpeakerReview"/>
+        <relationship name="wishlists" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="WishlistItem" inverseName="user" inverseEntity="WishlistItem"/>
+    </entity>
+    <entity name="SavedLayout" representedClassName="SavedLayout" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="roomType" attributeType="String"/>
+        <attribute name="audioSystemType" attributeType="String"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="speakerPositions" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="savedLayouts" inverseEntity="User"/>
+    </entity>
+    <entity name="SpeakerBrand" representedClassName="SpeakerBrand" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="logoImageName" optional="YES" attributeType="String"/>
+        <attribute name="website" optional="YES" attributeType="String"/>
+        <relationship name="models" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SpeakerModel" inverseName="brand" inverseEntity="SpeakerModel"/>
+    </entity>
+    <entity name="SpeakerModel" representedClassName="SpeakerModel" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="modelNumber" optional="YES" attributeType="String"/>
+        <attribute name="type" attributeType="String"/>
+        <attribute name="priceRange" optional="YES" attributeType="String"/>
+        <attribute name="frequencyResponse" optional="YES" attributeType="String"/>
+        <attribute name="powerRating" optional="YES" attributeType="String"/>
+        <attribute name="dimensions" optional="YES" attributeType="String"/>
+        <attribute name="weight" optional="YES" attributeType="String"/>
+        <attribute name="imageURL" optional="YES" attributeType="String"/>
+        <attribute name="averageRating" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="reviewCount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="brand" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SpeakerBrand" inverseName="models" inverseEntity="SpeakerBrand"/>
+        <relationship name="reviews" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SpeakerReview" inverseName="speakerModel" inverseEntity="SpeakerReview"/>
+        <relationship name="wishlistEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="WishlistItem" inverseName="speakerModel" inverseEntity="WishlistItem"/>
+    </entity>
+    <entity name="SpeakerReview" representedClassName="SpeakerReview" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="rating" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="title" attributeType="String"/>
+        <attribute name="content" attributeType="String"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="setupPhotos" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="roomSize" optional="YES" attributeType="String"/>
+        <attribute name="systemType" optional="YES" attributeType="String"/>
+        <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="speakerReviews" inverseEntity="User"/>
+        <relationship name="speakerModel" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SpeakerModel" inverseName="reviews" inverseEntity="SpeakerModel"/>
+    </entity>
+    <entity name="WishlistItem" representedClassName="WishlistItem" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="addedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="wishlists" inverseEntity="User"/>
+        <relationship name="speakerModel" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SpeakerModel" inverseName="wishlistEntries" inverseEntity="SpeakerModel"/>
+    </entity>
+    <entity name="Item" representedClassName="Item" syncable="YES" codeGenerationType="class">
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <elements>
+        <element name="User" positionX="-63" positionY="-18" width="128" height="164"/>
+        <element name="SavedLayout" positionX="-54" positionY="-9" width="128" height="134"/>
+        <element name="SpeakerBrand" positionX="-45" positionY="0" width="128" height="104"/>
+        <element name="SpeakerModel" positionX="-36" positionY="9" width="128" height="254"/>
+        <element name="SpeakerReview" positionX="-27" positionY="18" width="128" height="179"/>
+        <element name="WishlistItem" positionX="-18" positionY="27" width="128" height="104"/>
+        <element name="Item" positionX="-63" positionY="-18" width="128" height="44"/>
+    </elements>
+</model>
