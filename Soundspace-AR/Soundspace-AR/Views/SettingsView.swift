@@ -20,14 +20,17 @@ struct SettingsView: View {
     @State private var showingHelpAbout: Bool = false
 
     // MARK: - User Data Accessors
+    /// Retrieves the username from the current user, defaulting to "Unknown User" if unavailable.
     private var username: String {
         authManager.currentUser?.value(forKey: "username") as? String ?? "Unknown User"
     }
 
+    /// Retrieves the email from the current user, defaulting to "No Email" if unavailable.
     private var email: String {
         authManager.currentUser?.value(forKey: "email") as? String ?? "No Email"
     }
 
+    /// The main body of the SettingsView, containing the gradient background and content layout.
     var body: some View {
         ZStack {
             LinearGradient(
@@ -55,6 +58,7 @@ struct SettingsView: View {
         }
     }
     
+    // Header section with title
     private var headerSection: some View {
         VStack(spacing: 12) {
             Spacer()
@@ -67,6 +71,7 @@ struct SettingsView: View {
         .frame(height: 180)
     }
     
+    // Content card containing scrollable settings sections
     private var contentCard: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -98,6 +103,7 @@ struct SettingsView: View {
         .padding(.bottom, 16)
     }
     
+    // Profile section with user avatar and edit icon
     private var profileSection: some View {
         VStack(spacing: 12) {
             ZStack {
@@ -120,6 +126,7 @@ struct SettingsView: View {
         }
     }
     
+    // Account information section displaying username and email
     private var accountInformationSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Account Information")
@@ -131,6 +138,7 @@ struct SettingsView: View {
         }
     }
     
+    // Security section with options for PIN, password, and biometric auth
     private var securitySection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Security")
@@ -167,6 +175,7 @@ struct SettingsView: View {
         }
     }
     
+    // Other section with help, notifications, reminders, AR anchoring, and logout
     private var otherSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Other")
@@ -240,6 +249,7 @@ struct SettingsView: View {
     }
 
 
+    // Helper function to create an info tile for account details
     private func infoTile(label: String, value: String) -> some View {
         tileRow {
             Text(label)
@@ -250,6 +260,7 @@ struct SettingsView: View {
         }
     }
 
+    // Helper function to create a reusable tile row with background and padding
     private func tileRow<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         HStack { content() }
             .padding(.vertical, 14)
@@ -258,6 +269,7 @@ struct SettingsView: View {
             .cornerRadius(12)
     }
     
+    // Back button to dismiss the settings view
     private var backButton: some View {
         Button(action: {
             dismiss()
@@ -269,8 +281,8 @@ struct SettingsView: View {
                 .padding(.vertical, 16)
                 .background(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(LinearGradient(colors: [Color.blue.opacity(0.95), Color.blue.opacity(0.8)], startPoint: .top, endPoint: .bottom))
-                )
+                    .fill(LinearGradient(colors: [Color.blue.opacity(0.95), Color.blue.opacity(0.8)], startPoint: .top, endPoint: .bottom))
+            )
         }
     }
 }

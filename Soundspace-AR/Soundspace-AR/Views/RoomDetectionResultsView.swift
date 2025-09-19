@@ -14,6 +14,7 @@ struct RoomDetectionResultsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingARSetup = false
     
+    /// The main body of the RoomDetectionResultsView, displaying analysis results and actions.
     var body: some View {
         NavigationView {
             ScrollView {
@@ -66,6 +67,7 @@ struct RoomDetectionResultsView: View {
         }
     }
     
+    /// Header section displaying the analysis completion status.
     private var resultsHeader: some View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
@@ -83,6 +85,7 @@ struct RoomDetectionResultsView: View {
         }
     }
     
+    /// Creates a card displaying room dimensions if available.
     private func roomDimensionsCard(_ dimensions: RoomDimensions) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Precise Room Dimensions", systemImage: "ruler.fill")
@@ -109,6 +112,7 @@ struct RoomDetectionResultsView: View {
         .cornerRadius(12)
     }
     
+    /// Creates a card displaying the detected room type.
     private func roomTypeCard(_ roomType: RoomType) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Detected Room Type", systemImage: "house.fill")
@@ -138,6 +142,7 @@ struct RoomDetectionResultsView: View {
         .cornerRadius(12)
     }
     
+    /// Creates a card displaying the recommended audio system.
     private func recommendedSystemCard(_ system: AudioSystemType) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Recommended Audio System", systemImage: "speaker.wave.3.fill")
@@ -171,6 +176,7 @@ struct RoomDetectionResultsView: View {
         .cornerRadius(12)
     }
     
+    /// Section displaying the analysis confidence level with a progress bar.
     private var confidenceSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Analysis Confidence")
@@ -214,6 +220,7 @@ struct RoomDetectionResultsView: View {
         .cornerRadius(12)
     }
     
+    /// Action buttons for starting AR setup, retaking photo, or manual setup.
     private var actionButtons: some View {
         VStack(spacing: 12) {
             // Start AR Setup button
@@ -264,6 +271,7 @@ struct RoomDetectionResultsView: View {
         }
     }
     
+    /// Section providing optimization tips based on room type.
     private var tipsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Optimization Tips")
@@ -360,6 +368,7 @@ struct RoomDetectionResultsView: View {
         .cornerRadius(12)
     }
     
+    /// Computed color for the confidence indicator based on confidence level.
     private var confidenceColor: Color {
         if safeConfidence >= 0.8 {
             return .green
@@ -370,11 +379,13 @@ struct RoomDetectionResultsView: View {
         }
     }
     
+    /// Safely clamps the confidence value between 0 and 1.
     private var safeConfidence: Float {
         guard confidence.isFinite, confidence >= 0 else { return 0 }
         return min(max(confidence, 0), 1)
     }
     
+    /// Provides a description of the confidence level.
     private var confidenceDescription: String {
         if safeConfidence >= 0.8 {
             return "High confidence - Recommendation is highly reliable"
