@@ -6,7 +6,7 @@ import Foundation
 import UserNotifications
 import UIKit
 
-class NotificationManager: ObservableObject {
+class NotificationManager: ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     
     @Published var notificationsEnabled: Bool {
@@ -21,6 +21,7 @@ class NotificationManager: ObservableObject {
     private init() {
         self.notificationsEnabled = UserDefaults.standard.bool(forKey: "NotificationsEnabled")
         setupNotificationCategories()
+        UNUserNotificationCenter.current().delegate = self
     }
     
     func requestAuthorization() {
@@ -29,12 +30,51 @@ class NotificationManager: ObservableObject {
                 if granted {
                     print("Notification permission granted")
                     self?.notificationsEnabled = true
+                    self?.registerForRemoteNotifications()
                 } else if let error = error {
                     print("Failed to request notification authorization: \(error)")
                     self?.notificationsEnabled = false
                 }
             }
         }
+    }
+    
+    // New method to register for remote notifications
+    func registerForRemoteNotifications() {
+        UIApplication.shared.registerForRemoteNotifications()
+    }
+    
+    // Handle device token registration (call this from AppDelegate)
+    func didRegisterForRemoteNotifications(withDeviceToken deviceToken: Data) {
+        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+        let token = tokenParts.joined()
+        print("Device Token: \(token)")
+        // Send token to your server for push notifications
+    }
+    
+    // Handle registration failure (call this from AppDelegate)
+    func didFailToRegisterForRemoteNotifications(withError error: Error) {
+        print("Failed to register for remote notifications: \(error)")
+    }
+    
+    // Delegate method to handle incoming notifications
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        // Process remote notification payload here
+        if response.notification.request.content.categoryIdentifier == "CALIBRATION_REMINDER" {
+            // Handle calibration action
+            print("Calibration reminder tapped")
+        } else if response.notification.request.content.categoryIdentifier == "SETUP_COMPLETE" {
+            // Handle setup complete
+            print("Setup complete notification tapped")
+        }
+        // Add more handling as needed
+        completionHandler()
+    }
+    
+    // Delegate method for notifications received while app is in foreground
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.alert, .sound, .badge])
     }
     
     private func setupNotificationCategories() {

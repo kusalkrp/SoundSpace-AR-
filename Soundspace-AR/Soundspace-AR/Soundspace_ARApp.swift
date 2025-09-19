@@ -7,8 +7,26 @@
 import SwiftUI
 import CoreData
 
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // Request notification authorization on app launch
+        NotificationManager.shared.requestAuthorization()
+        return true
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationManager.shared.didRegisterForRemoteNotifications(withDeviceToken: deviceToken)
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationManager.shared.didFailToRegisterForRemoteNotifications(withError: error)
+    }
+}
+
 @main
 struct Soundspace_ARApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     let persistenceController = PersistenceController.shared
     @StateObject private var authManager = AuthenticationManager(viewContext: PersistenceController.shared.container.viewContext)
     @StateObject private var speakerDB = SpeakerDatabaseManager(context: PersistenceController.shared.container.viewContext)
