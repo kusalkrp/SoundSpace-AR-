@@ -38,6 +38,7 @@ struct LoginView: View {
         case suUsername, suEmail, suPassword, suConfirm
     }
 
+    /// The main body of the LoginView, containing the background gradient and authentication card.
     var body: some View {
         ZStack {
             backgroundGradient
@@ -61,6 +62,7 @@ struct LoginView: View {
     }
 
     // MARK: - Main Sections
+    /// Background gradient for the view.
     private var backgroundGradient: some View {
         LinearGradient(
             gradient: Gradient(colors: [
@@ -73,6 +75,7 @@ struct LoginView: View {
         .ignoresSafeArea()
     }
     
+    /// Title section displaying the app name.
     private var titleSection: some View {
         VStack {
             Spacer()
@@ -84,6 +87,7 @@ struct LoginView: View {
         }
     }
     
+    /// Authentication card containing toggle buttons and tab view.
     private var authCard: some View {
         VStack(spacing: 20) {
             authToggleButtons
@@ -97,6 +101,7 @@ struct LoginView: View {
         .padding(.horizontal, 20)
     }
     
+    /// Toggle buttons for switching between login and signup.
     private var authToggleButtons: some View {
         HStack(spacing: 0) {
             loginToggleButton
@@ -107,6 +112,7 @@ struct LoginView: View {
         .cornerRadius(26)
     }
     
+    /// Login toggle button.
     private var loginToggleButton: some View {
         Button(action: switchToLogin) {
             Text("Login")
@@ -120,6 +126,7 @@ struct LoginView: View {
         }
     }
     
+    /// Signup toggle button.
     private var signupToggleButton: some View {
         Button(action: switchToSignup) {
             Text("Sign Up")
@@ -133,6 +140,7 @@ struct LoginView: View {
         }
     }
     
+    /// Tab view for login and signup forms.
     private var authTabView: some View {
         TabView(selection: $selectedAuthPage) {
             loginForm.tag(0)
@@ -143,6 +151,7 @@ struct LoginView: View {
         .frame(height: 450)
     }
     
+    /// Toolbar content for navigation bar.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -152,14 +161,17 @@ struct LoginView: View {
     }
 
     // MARK: - Computed Properties
+    /// Text color for the login button based on selection.
     private var loginButtonTextColor: Color {
         selectedAuthPage == 0 ? .white : .gray
     }
     
+    /// Text color for the signup button based on selection.
     private var signupButtonTextColor: Color {
         selectedAuthPage == 1 ? .white : .gray
     }
     
+    /// Background for the login button.
     @ViewBuilder
     private var loginButtonBackground: some View {
         if selectedAuthPage == 0 {
@@ -169,6 +181,7 @@ struct LoginView: View {
         }
     }
     
+    /// Background for the signup button.
     @ViewBuilder
     private var signupButtonBackground: some View {
         if selectedAuthPage == 1 {
@@ -179,6 +192,7 @@ struct LoginView: View {
     }
 
     // MARK: - Actions
+    /// Switches to the login tab.
     private func switchToLogin() {
         withAnimation(.easeInOut) { 
             selectedAuthPage = 0 
@@ -186,6 +200,7 @@ struct LoginView: View {
         }
     }
     
+    /// Switches to the signup tab.
     private func switchToSignup() {
         withAnimation(.easeInOut) { 
             selectedAuthPage = 1 
@@ -194,6 +209,7 @@ struct LoginView: View {
     }
 
     // MARK: - Subviews
+    /// Login form view.
     private var loginForm: some View {
         VStack(spacing: 16) {
             TextField("Email", text: $email)
@@ -297,6 +313,7 @@ struct LoginView: View {
         .padding(.top, 4)
     }
 
+    /// Signup form view.
     private var signupForm: some View {
         VStack(spacing: 12) {
             TextField("Username", text: $suUsername)
@@ -453,6 +470,7 @@ struct LoginView: View {
     }
 
     // MARK: - Helpers
+    /// Blue gradient used for buttons.
     private var blueGradient: LinearGradient {
         LinearGradient(
             gradient: Gradient(colors: [
@@ -464,20 +482,24 @@ struct LoginView: View {
         )
     }
 
+    /// Checks if the signup form is valid.
     private var isSignupValid: Bool {
         !suUsername.isEmpty && !suEmail.isEmpty && isValidEmail(suEmail) && !suPassword.isEmpty && !suConfirmPassword.isEmpty && suPassword == suConfirmPassword && suPassword.count >= 6
     }
     
+    /// Validates email format.
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
         return emailPredicate.evaluate(with: email)
     }
     
+    /// Handles login action.
     private func handleLogin() {
         performLogin()
     }
 
+    /// Performs the login process.
     private func performLogin() {
         guard !email.isEmpty, !password.isEmpty else {
             alertTitle = "Login Error"
@@ -506,6 +528,7 @@ struct LoginView: View {
         }
     }
 
+    /// Performs the signup process.
     private func performSignup() {
         guard isSignupValid else {
             showValidationHints = true
@@ -543,6 +566,7 @@ struct LoginView: View {
         }
     }
 
+    /// Performs Face ID login.
     private func performFaceIDLogin() {
         isLoggingIn = true
         
