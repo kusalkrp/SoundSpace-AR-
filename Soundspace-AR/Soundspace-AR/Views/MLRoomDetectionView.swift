@@ -432,7 +432,6 @@ class RoomDetector: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBu
     // Vision
     private let sequenceHandler = VNSequenceRequestHandler()
     private var classificationRequests: [VNRequest] = []
-    // Removed object observation storage (VNRecognizeObjectsRequest unavailable in current SDK)
     private var sceneLabelScores: [String: Float] = [:]
     private var frameCounter = 0
     private let inferenceInterval = 5 // analyze every Nth frame
@@ -458,7 +457,7 @@ class RoomDetector: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBu
     
     private func prepareRequests() {
         // Scene classification (built-in). Object recognition request omitted because VNRecognizeObjectsRequest
-        // isn't available in this SDK / deployment target.
+
         if #available(iOS 16.0, *) {
             let sceneRequest = VNClassifyImageRequest()
             classificationRequests = [sceneRequest]
